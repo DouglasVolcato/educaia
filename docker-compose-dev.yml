@@ -1,0 +1,65 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    ports:
+      - ${DB_PORT}:5432
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/db.sql:/docker-entrypoint-initdb.d/db.sql
+    networks:
+      - monitoring
+
+  main:
+    build:
+      context: ./app
+      dockerfile: Dockerfile.dev
+    restart: always
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT}
+      PORT: ${PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      API_URL: ${API_URL}
+      CLIENT_URL: ${CLIENT_URL}
+      HOST: ${HOST}
+      LANGUAGE: ${LANGUAGE}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOLE_CLIENT_ID: ${GOOLE_CLIENT_ID}
+    depends_on:
+      - postgres
+    networks:
+      - monitoring
+    volumes:
+      - ./app:/app
+      - /app/node_modules
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  postgres_data:
