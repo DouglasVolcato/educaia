@@ -55,17 +55,29 @@ describe("DbConnection", () => {
         expect(mockConnect).toHaveBeenCalledWith()
     })
 
-    test("Should save the connection statically", async () => {
-        const sut = DbConnection;
-        await sut.connect()
-        expect((sut as any).connection).toEqual(mockPoolClient())
-    })
-
     test("Should throw if connection throws", async () => {
         const sut = DbConnection;
         mockConnect.mockImplementationOnce(() => {
             throw new Error(FakeData.phrase())
         })
         expect(async () => await sut.connect()).rejects.toThrow()
+    })
+
+    test("Should save the new connection", async () => {
+        const sut = DbConnection;
+        await sut.connect()
+        expect((sut as any).connection).toEqual(mockPoolClient())
+    })
+
+    test("Should not create a new connection is a connection already existed", async () => {
+        const newConnection = FakeData.uuid();
+        const sut = DbConnection;
+        expect((sut as any).connection).toBeUndefined()
+        mockConnect.mockImplementationOnce(() => (newConnection as any))
+        await sut.connect()
+        expect((sut as any).connection).toBe(newConnection)
+        mockConnect.mockImplementationOnce(() => (FakeData.uuid() as any))
+        await sut.connect()
+        expect((sut as any).connection).toBe(newConnection)
     })
 })

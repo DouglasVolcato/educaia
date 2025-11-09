@@ -1,5 +1,4 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-import jestConfig from "./jest.config";
+import jestConfig from "./jest.config.js";
 export default {
   ...jestConfig,
   testRegex: ".*\\.spec\\.ts$",
