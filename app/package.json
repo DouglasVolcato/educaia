@@ -8,7 +8,7 @@
   "license": "MIT",
   "scripts": {
     "start": "tsc && node --env-file=.env dist/main/index.js",
-    "dev": "cp ../.env .  && nodemon --legacy-watch src/main/index.ts",
+    "dev": "cp ../.env . && nodemon --legacy-watch --exec \"node --loader ts-node/esm\" src/main/index.ts",
     "build": "tsc",
     "test": "jest --passWithNoTests --runInBand --forceExit -c jest.config.js",
     "test-unit": "jest --passWithNoTests -c jest.unit.config.js",
