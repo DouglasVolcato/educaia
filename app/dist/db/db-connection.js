@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DbConnection = void 0;
-const pg_1 = require("pg");
-class DbConnection {
+import { Pool } from "pg";
+export class DbConnection {
     static async connect() {
-        const databasePool = new pg_1.Pool({
+        const databasePool = new Pool({
             user: process.env.DB_USER,
             host: process.env.DB_HOST,
             database: process.env.DB_NAME,
@@ -15,5 +12,20 @@ class DbConnection {
             DbConnection.connection = await databasePool.connect();
         }
     }
+    static async disconnect() {
+        await DbConnection.connection.release();
+    }
+    static async startTransaction() {
+        await DbConnection.connection.query("BEGIN");
+    }
+    static async commit() {
+        await DbConnection.connection.query("COMMIT");
+    }
+    static async rollback() {
+        await DbConnection.connection.query("ROLLBACK");
+    }
+    static async query(query) {
+        const result = await DbConnection.connection.query(query.sql, query.params);
+        return result.rows;
+    }
 }
-exports.DbConnection = DbConnection;
