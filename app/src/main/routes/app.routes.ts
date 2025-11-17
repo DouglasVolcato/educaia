@@ -250,7 +250,7 @@ const mockLearningFocus = [
 const appRouter = Router();
 
 appRouter.get("/", (req: Request, res: Response) => {
-  res.redirect("/app/decks");
+  res.redirect("/app/login");
 });
 
 appRouter.get("/login", (req: Request, res: Response) => {

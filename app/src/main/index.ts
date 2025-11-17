@@ -25,12 +25,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.set("view engine", "ejs");
-app.set("views", path.join(rootDir, "src", "main", "views"));
-app.use("/static", express.static(path.join(rootDir, "src", "main", "public")));
+app.set("views", path.join(rootDir, "src", "presentation", "views"));
+app.use("/static", express.static(path.join(rootDir, "src", "presentation", "public")));
 app.disable("x-powered-by");
 
-app.get("/", (req, res) => {
-  res.redirect("/app/login");
+app.get("/", (_, res) => {
+  // res.render("app/login", {
+  //   title: "Entrar",
+  // });
+  res.json({ message: "EducaIA API" });
 });
 
 app.use("/app", appRouter);
