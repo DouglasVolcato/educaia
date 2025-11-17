@@ -1,6 +1,63 @@
 (() => {
   const alertContainer = document.getElementById("global-alert-container");
   const loadingOverlay = document.getElementById("global-loading-overlay");
+  const THEME_STORAGE_KEY = "educaia-theme";
+
+  const prefersDarkMode = () => window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+
+  const getStoredTheme = () => {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY);
+    } catch (error) {
+      console.warn("Não foi possível ler o tema salvo", error);
+      return null;
+    }
+  };
+
+  const updateThemeControls = (theme) => {
+    const isDark = theme === "dark";
+    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(isDark));
+      button.setAttribute("title", isDark ? "Alternar para tema claro" : "Alternar para tema escuro");
+      button.querySelector("[data-theme-icon='light']")?.classList.toggle("d-none", isDark);
+      button.querySelector("[data-theme-icon='dark']")?.classList.toggle("d-none", !isDark);
+      const label = button.querySelector("[data-theme-text]");
+      if (label) {
+        label.textContent = isDark ? "Tema escuro" : "Tema claro";
+      }
+    });
+  };
+
+  const applyTheme = (theme) => {
+    if (!theme) return;
+    document.documentElement.setAttribute("data-bs-theme", theme);
+    updateThemeControls(theme);
+  };
+
+  const setThemePreference = (theme) => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (error) {
+      console.warn("Não foi possível salvar o tema", error);
+    }
+    applyTheme(theme);
+  };
+
+  const initTheme = () => {
+    const storedTheme = getStoredTheme();
+    const theme = storedTheme || (prefersDarkMode() ? "dark" : "light");
+    applyTheme(theme);
+  };
+
+  try {
+    window.matchMedia?.("(prefers-color-scheme: dark)")?.addEventListener("change", (event) => {
+      if (!getStoredTheme()) {
+        applyTheme(event.matches ? "dark" : "light");
+      }
+    });
+  } catch (error) {
+    console.warn("Não foi possível monitorar o esquema de cores do sistema", error);
+  }
 
   const setOverlayVisible = (visible) => {
     if (!loadingOverlay) return;
@@ -123,7 +180,16 @@
     showAlert("Ocorreu um erro ao processar a requisição.");
   });
 
+  initTheme();
+
   document.addEventListener("click", (event) => {
+    const themeToggle = event.target.closest("[data-theme-toggle]");
+    if (themeToggle) {
+      const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+      setThemePreference(isDark ? "light" : "dark");
+      return;
+    }
+
     const actionButton = event.target.closest("[data-action='toggle-answer']");
     if (!actionButton) {
       return;
@@ -143,5 +209,6 @@
 
   window.AppUI = {
     showAlert,
+    setThemePreference,
   };
 })();

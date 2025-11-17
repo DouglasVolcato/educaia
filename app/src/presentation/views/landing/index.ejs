@@ -1,8 +1,8 @@
 <% const title = 'Domine seus estudos com a EducaIA'; %>
 <%- include('../partials/head-landing', { title }) %>
   <body class="gradient-bg">
-    <header class="bg-white border-bottom">
-      <nav class="navbar navbar-expand-lg py-3 container">
+    <header class="bg-body border-bottom shadow-sm">
+      <nav class="navbar navbar-expand-lg py-3 container bg-body">
         <a class="navbar-brand fw-bold text-primary" href="/">EducaIA</a>
         <button
           class="navbar-toggler"
@@ -30,7 +30,11 @@
               <a class="nav-link" href="#indicadores">Indicadores</a>
             </li>
           </ul>
-          <div class="d-flex gap-2 ms-lg-4">
+          <div class="d-flex align-items-center gap-2 ms-lg-4 flex-wrap">
+            <%- include('../partials/theme-toggle', {
+              themeButtonClasses: 'btn btn-outline-secondary d-inline-flex align-items-center gap-2',
+              themeLabelClasses: 'small fw-semibold'
+            }) %>
             <a class="btn btn-outline-secondary" href="/app/login">Entrar</a>
             <a class="btn btn-primary" href="/app/register">Criar conta</a>
           </div>

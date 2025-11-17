@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,6 +19,19 @@
       crossorigin="anonymous"
     />
     <link rel="stylesheet" href="/static/css/styles.css?v=<%= locals.staticVersion || 1 %>" />
+    <script>
+      (() => {
+        const storageKey = "educaia-theme";
+        try {
+          const storedTheme = localStorage.getItem(storageKey);
+          const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const theme = storedTheme || (prefersDark ? "dark" : "light");
+          document.documentElement.setAttribute("data-bs-theme", theme);
+        } catch (error) {
+          document.documentElement.setAttribute("data-bs-theme", "light");
+        }
+      })();
+    </script>
     <style>
       body {
         font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -32,6 +45,12 @@
         background: radial-gradient(circle at top, rgba(13, 110, 253, 0.15), transparent),
           radial-gradient(circle at 20% 20%, rgba(32, 201, 151, 0.15), transparent),
           #f8f9fa;
+      }
+
+      :root[data-bs-theme='dark'] .gradient-bg {
+        background: radial-gradient(circle at top, rgba(13, 110, 253, 0.06), transparent),
+          radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.06), transparent),
+          #020617;
       }
 
       .feature-card:hover {
@@ -52,6 +71,10 @@
         padding: 6rem 0;
         display: flex;
         align-items: center;
+      }
+
+      :root[data-bs-theme='dark'] .hero-intro {
+        background: linear-gradient(120deg, #0b1440, #312e81);
       }
 
       .hero-intro .badge {
