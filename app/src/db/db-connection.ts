@@ -20,8 +20,15 @@ export class DbConnection {
         await DbConnection.connection.release();
     }
 
-    public static async startTransaction() {
+    public static async open() {
+        if (!DbConnection.connection) {
+            throw new Error("Database connection has not been initialized");
+        }
         await DbConnection.connection.query("BEGIN");
+    }
+
+    public static async startTransaction() {
+        await DbConnection.open();
     }
 
     public static async commit() {
@@ -36,6 +43,9 @@ export class DbConnection {
         sql: string;
         params: any[];
     }): Promise<any[]> {
+        if (!DbConnection.connection) {
+            throw new Error("Database connection has not been initialized");
+        }
         const result = await DbConnection.connection.query(
             query.sql,
             query.params

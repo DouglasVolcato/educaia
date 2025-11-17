@@ -5,6 +5,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
+import { DbConnection } from "@db/db-connection";
 
 
 dotenv.config({
@@ -41,8 +42,18 @@ app.get("/terms", (_, res) => {
 
 app.use("/app", appRouter);
 
-app.listen(port, () => {
-  console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
-  console.log(`Documentation on ${process.env.API_URL}/docs`);
-  console.log(`Client on ${process.env.API_URL}/client`);
-});
+const bootstrap = async () => {
+  try {
+    await DbConnection.connect();
+    app.listen(port, () => {
+      console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
+      console.log(`Documentation on ${process.env.API_URL}/docs`);
+      console.log(`Client on ${process.env.API_URL}/client`);
+    });
+  } catch (error) {
+    console.error("Failed to start server", error);
+    process.exit(1);
+  }
+};
+
+bootstrap();
