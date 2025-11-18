@@ -15,8 +15,14 @@ export class DbConnection {
     static async disconnect() {
         await DbConnection.connection.release();
     }
-    static async startTransaction() {
+    static async open() {
+        if (!DbConnection.connection) {
+            throw new Error("Database connection has not been initialized");
+        }
         await DbConnection.connection.query("BEGIN");
+    }
+    static async startTransaction() {
+        await DbConnection.open();
     }
     static async commit() {
         await DbConnection.connection.query("COMMIT");
@@ -25,6 +31,9 @@ export class DbConnection {
         await DbConnection.connection.query("ROLLBACK");
     }
     static async query(query) {
+        if (!DbConnection.connection) {
+            throw new Error("Database connection has not been initialized");
+        }
         const result = await DbConnection.connection.query(query.sql, query.params);
         return result.rows;
     }

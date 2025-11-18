@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { TokenHandlerAdapter } from "./token-handler-adapter";
-import { FakeData } from "@tests/fake-data";
+import { FakeData } from "../tests/fake-data";
 
 jest.mock("jsonwebtoken", () => ({
     sign: jest.fn(),

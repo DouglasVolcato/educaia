@@ -1,9 +1,9 @@
+import { integrationModel } from "../../db/models/integration.model.ts";
+import { flashcardModel } from "../../db/models/flashcard.model.ts";
+import { userModel, UserRow } from "../../db/models/user.model.ts";
+import { deckModel } from "../../db/models/deck.model.ts";
+import { DbConnection } from "../../db/db-connection.ts";
 import { Request, Response, Router } from "express";
-import { DbConnection } from "@db/db-connection";
-import { userModel, UserRow } from "@db/models/user.model";
-import { deckModel } from "@db/models/deck.model";
-import { flashcardModel } from "@db/models/flashcard.model";
-import { integrationModel } from "@db/models/integration.model";
 
 export type FlashcardView = {
   id: string;

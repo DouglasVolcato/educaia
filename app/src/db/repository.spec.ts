@@ -1,5 +1,5 @@
 import { DbConnection } from "./db-connection";
-import { FakeData } from "@tests/fake-data";
+import { FakeData } from "../tests/fake-data";
 import { Repository } from "./repository";
 
 jest.mock("./db-connection", () => ({

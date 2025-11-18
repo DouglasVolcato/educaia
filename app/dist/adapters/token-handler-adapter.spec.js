@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { TokenHandlerAdapter } from "./token-handler-adapter";
-import { FakeData } from "@tests/fake-data";
+import { FakeData } from "../tests/fake-data";
 jest.mock("jsonwebtoken", () => ({
     sign: jest.fn(),
     verify: jest.fn(),
@@ -13,7 +13,7 @@ describe("TokenHandlerAdapter", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         process.env = { ...originalEnv };
-        process.env.SECRET_KEY = FakeData.uuid();
+        process.env.JWT_SECRET = FakeData.uuid();
         sut = new TokenHandlerAdapter();
     });
     afterAll(() => {
@@ -25,7 +25,7 @@ describe("TokenHandlerAdapter", () => {
         signMock.mockReturnValueOnce(token);
         const result = sut.generateToken(payload);
         expect(signMock).toHaveBeenCalledTimes(1);
-        expect(signMock).toHaveBeenCalledWith(payload, process.env.SECRET_KEY, {
+        expect(signMock).toHaveBeenCalledWith(payload, process.env.JWT_SECRET, {
             expiresIn: "1h",
         });
         expect(result).toBe(token);
@@ -44,7 +44,7 @@ describe("TokenHandlerAdapter", () => {
         verifyMock.mockReturnValueOnce(decoded);
         const result = sut.verifyToken(token);
         expect(verifyMock).toHaveBeenCalledTimes(1);
-        expect(verifyMock).toHaveBeenCalledWith(token, process.env.SECRET_KEY);
+        expect(verifyMock).toHaveBeenCalledWith(token, process.env.JWT_SECRET);
         expect(result).toBe(decoded);
     });
     test("verifyToken should throw if jwt.verify throws", () => {

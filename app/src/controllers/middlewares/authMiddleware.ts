@@ -1,9 +1,8 @@
-import { TokenHandlerAdapter } from "src/adapters/token-handler-adapter";
+import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.ts";
+import { SESSION_COOKIE_NAME } from "../../constants/session.ts";
 import { usersModel } from "../../db/models/users-model.ts";
-import { NextFunction, Request, Response } from "express";
-
-export const SESSION_COOKIE_NAME = "session_token";
 const PUBLIC_PATHS = new Set(["/login", "/register", "/"]);
+import { NextFunction, Request, Response } from "express";
 
 let jwtAdapter: TokenHandlerAdapter | null = null;
 
@@ -63,7 +62,11 @@ export const authMiddleware = async (
       return;
     }
 
-    req.user = user;
+    if (!req.body) {
+      req.body = {};
+    }
+
+    req.body.user = user;
     res.locals.user = user;
     next();
   } catch (error) {

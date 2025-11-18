@@ -1,4 +1,4 @@
-import { DbConnection } from "./db-connection";
+import { DbConnection } from "./db-connection.js";
 export class Repository {
     constructor(model) {
         this.tableName = model.tableName;
@@ -47,13 +47,15 @@ export class Repository {
     }
     async findOne(input) {
         const fields = this.publicFields.join(",");
-        const where = [...input.params, { key: '1', value: '1' }]
-            .map((param, index) => `${param.key} = $${index + 1}`)
-            .join(" AND ");
-        const query = `SELECT ${fields} FROM ${this.tableName} WHERE ${where} LIMIT 1;`;
+        const params = input.params ?? [];
+        const where = params.length
+            ? `WHERE ${params.map((param, index) => `${param.key} = $${index + 1}`).join(" AND ")}`
+            : "";
+        const orderDirection = input.orderByAsc ? "ASC" : "DESC";
+        const query = `SELECT ${fields} FROM ${this.tableName} ${where} ORDER BY ${this.idField} ${orderDirection} LIMIT 1;`;
         const result = await DbConnection.query({
             sql: query,
-            params: [...input.params.map((param) => param.value), "1"],
+            params: params.map((param) => param.value),
         });
         return result.length === 0 ? null : result[0];
     }

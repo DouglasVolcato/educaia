@@ -1,5 +1,5 @@
-import { SESSION_COOKIE_NAME } from "../../controllers/middlewares/authMiddleware.ts";
-import { TokenHandlerAdapter } from "src/adapters/token-handler-adapter";
+import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.ts";
+import { SESSION_COOKIE_NAME } from "../../constants/session.ts";
 import { usersModel } from "../../db/models/users-model.ts";
 import { Router, Request, Response } from "express";
 import { v4 as uuid } from "uuid";

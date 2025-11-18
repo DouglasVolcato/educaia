@@ -1,14 +1,14 @@
 import jwt from "jsonwebtoken";
 export class TokenHandlerAdapter {
     constructor() {
-        this.secretKey = process.env.SECRET_KEY || "";
+        const secret = process.env.JWT_SECRET || "";
+        this.secret = secret;
     }
     generateToken(payload) {
-        return jwt.sign(payload, this.secretKey, {
-            expiresIn: "1h"
-        });
+        return jwt.sign(payload, this.secret, { expiresIn: "1h" });
     }
     verifyToken(token) {
-        return jwt.verify(token, this.secretKey);
+        const decoded = jwt.verify(token, this.secret);
+        return decoded;
     }
 }

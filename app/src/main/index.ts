@@ -1,22 +1,32 @@
 import { authMiddleware } from "../controllers/middlewares/authMiddleware.ts";
+import { DbConnection } from "../db/db-connection.ts";
 import { appRouter } from "./routes/app.routes.ts";
 import { apiRouter } from "./routes/api.routes.ts";
 import { fileURLToPath } from "url";
-import 'module-alias/register.js';
+import "module-alias/register.js";
+import { inspect } from "util";
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
-import { DbConnection } from "@db/db-connection";
 
+const normalizeError = (error: unknown) =>
+  error instanceof Error ? error : new Error(inspect(error, { depth: null }));
+
+process.on("uncaughtException", (error) => {
+  console.error("uncaughtException", normalizeError(error));
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandledRejection", normalizeError(reason));
+});
 
 dotenv.config({
-  path: "./.env"
+  path: "./.env",
 });
 
 const port = process.env.PORT;
 const app = express();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..", "..");
@@ -63,7 +73,7 @@ const bootstrap = async () => {
       console.log(`Client on ${process.env.API_URL}/client`);
     });
   } catch (error) {
-    console.error("Failed to start server", error);
+    console.error("Failed to start server", normalizeError(error));
     process.exit(1);
   }
 };

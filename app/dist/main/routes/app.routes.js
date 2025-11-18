@@ -1,194 +1,112 @@
+import { integrationModel } from "../../db/models/integration.model.js";
+import { flashcardModel } from "../../db/models/flashcard.model.js";
+import { userModel } from "../../db/models/user.model.js";
+import { deckModel } from "../../db/models/deck.model.js";
+import { DbConnection } from "../../db/db-connection.js";
 import { Router } from "express";
-const mockUser = {
-    name: "Ana Paula",
-    email: "ana.paula@example.com",
-    plan: "Premium",
-    timezone: "America/Sao_Paulo",
-    avatar: "https://ui-avatars.com/api/?name=Ana+Paula",
-    streakInDays: 12,
-    goalPerDay: 20,
-};
-const mockDecks = [
-    {
-        id: "1",
-        name: "Matemática Básica",
-        description: "Conceitos fundamentais de álgebra, aritmética e geometria.",
-        subject: "Matemática",
-        tags: ["Matemática", "Álgebra"],
-        totalCards: 42,
-        dueCards: 8,
-        newCards: 5,
-        progress: 68,
-        updatedAt: "2024-02-10",
-        cards: [
-            {
-                id: "1",
-                question: "Qual é a fórmula da soma dos termos de uma progressão aritmética?",
-                answer: "Sₙ = (a₁ + aₙ) * n / 2, onde a₁ é o primeiro termo, aₙ o último termo e n a quantidade de termos.",
-                lastReviewedAt: "2024-02-11",
-                difficulty: "medium",
-                tags: ["PA", "Fórmulas"],
-            },
-            {
-                id: "2",
-                question: "Como calcular a área de um triângulo equilátero?",
-                answer: "Área = (lado² * √3) / 4.",
-                lastReviewedAt: "2024-02-09",
-                difficulty: "easy",
-                tags: ["Geometria"],
-            },
-            {
-                id: "3",
-                question: "O que representa o discriminante em uma equação quadrática?",
-                answer: "O discriminante (Δ = b² - 4ac) indica o número de raízes reais da equação quadrática.",
-                lastReviewedAt: "2024-02-05",
-                difficulty: "hard",
-                tags: ["Equações", "Δ"],
-            },
-        ],
-    },
-    {
-        id: "2",
-        name: "História do Brasil",
-        description: "Eventos marcantes do período colonial ao Brasil contemporâneo.",
-        subject: "História",
-        tags: ["História", "Brasil"],
-        totalCards: 58,
-        dueCards: 12,
-        newCards: 3,
-        progress: 52,
-        updatedAt: "2024-02-08",
-        cards: [
-            {
-                id: "1",
-                question: "Quais foram as principais causas da Inconfidência Mineira?",
-                answer: "Altos impostos cobrados pela Coroa Portuguesa e o desejo de independência da elite intelectual mineira.",
-                lastReviewedAt: "2024-02-10",
-                difficulty: "medium",
-                tags: ["Colônia", "Minas Gerais"],
-            },
-            {
-                id: "2",
-                question: "O que foi o Estado Novo?",
-                answer: "Período de governo de Getúlio Vargas iniciado em 1937 caracterizado por forte centralização do poder.",
-                lastReviewedAt: "2024-02-07",
-                difficulty: "hard",
-                tags: ["Era Vargas"],
-            },
-            {
-                id: "3",
-                question: "Quem foram os primeiros habitantes do território brasileiro?",
-                answer: "Diversos povos indígenas com culturas e línguas distintas.",
-                lastReviewedAt: "2024-02-03",
-                difficulty: "easy",
-                tags: ["Povos originários"],
-            },
-        ],
-    },
-    {
-        id: "3",
-        name: "Inglês para Viagem",
-        description: "Vocabulário e expressões essenciais para situações no exterior.",
-        subject: "Idiomas",
-        tags: ["Inglês", "Conversação"],
-        totalCards: 24,
-        dueCards: 2,
-        newCards: 10,
-        progress: 34,
-        updatedAt: "2024-02-12",
-        cards: [
-            {
-                id: "1",
-                question: "Como perguntar onde fica o banheiro em inglês?",
-                answer: "Excuse me, where is the restroom?",
-                lastReviewedAt: "2024-02-12",
-                difficulty: "easy",
-                tags: ["Vocabulário"],
-            },
-            {
-                id: "2",
-                question: "Qual expressão utilizar para pedir a conta em um restaurante?",
-                answer: "Could I get the check, please?",
-                lastReviewedAt: "2024-02-11",
-                difficulty: "medium",
-                tags: ["Restaurante"],
-            },
-            {
-                id: "3",
-                question: "Como oferecer ajuda a alguém em inglês?",
-                answer: "Can I give you a hand?",
-                lastReviewedAt: "2024-02-09",
-                difficulty: "easy",
-                tags: ["Expressões"],
-            },
-        ],
-    },
-];
-const mockReviewSession = {
-    deckName: "Matemática Básica",
-    cardNumber: 3,
-    totalCards: 15,
-    streakInDays: 12,
-    card: {
-        id: "2",
-        question: "Qual é a diferença entre permutação, arranjo e combinação?",
-        answer: "Permutação reorganiza todos os elementos, arranjo considera ordem em subconjuntos e combinação desconsidera a ordem.",
-        source: "Resumo do capítulo 4 do livro de Matemática Discreta",
-        tags: ["Análise combinatória", "Probabilidade"],
-        dueIn: "4 horas",
-    },
-};
-const mockIndicators = [
-    {
-        id: "accuracy",
-        title: "Taxa de acertos",
-        value: "87%",
-        helperText: "nas últimas 2 semanas",
-        trend: "up",
-        trendValue: "+4%",
-    },
-    {
-        id: "streak",
-        title: "Dias consecutivos",
-        value: `${mockUser.streakInDays}`,
-        helperText: "meta: 30 dias",
-        trend: "steady",
-        trendValue: "mantido",
-    },
-    {
-        id: "studied",
-        title: "Cartas estudadas",
-        value: "186",
-        helperText: "no último mês",
-        trend: "up",
-        trendValue: "+28",
-    },
-    {
-        id: "due",
-        title: "Revisões de hoje",
-        value: "12",
-        helperText: "distribuídas em 3 baralhos",
-        trend: "down",
-        trendValue: "-5",
-    },
-];
-const mockProgressHistory = [
-    { label: "Seg", reviewed: 18, created: 4 },
-    { label: "Ter", reviewed: 22, created: 6 },
-    { label: "Qua", reviewed: 16, created: 3 },
-    { label: "Qui", reviewed: 20, created: 5 },
-    { label: "Sex", reviewed: 24, created: 7 },
-    { label: "Sáb", reviewed: 12, created: 2 },
-    { label: "Dom", reviewed: 10, created: 1 },
-];
-const mockLearningFocus = [
-    { subject: "Matemática", percentage: 45 },
-    { subject: "História", percentage: 32 },
-    { subject: "Idiomas", percentage: 23 },
-];
 const appRouter = Router();
+const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const runInTransaction = async (handler) => {
+    await DbConnection.open();
+    try {
+        const result = await handler();
+        await DbConnection.commit();
+        return result;
+    }
+    catch (error) {
+        await DbConnection.rollback();
+        throw error;
+    }
+};
+const buildUserView = (user) => {
+    const fallbackAvatar = user.name
+        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`
+        : "https://ui-avatars.com/api/?name=EducaIA";
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        plan: user.plan ?? "Gratuito",
+        timezone: user.timezone ?? "America/Sao_Paulo",
+        avatar: user.avatar_url ?? fallbackAvatar,
+        streakInDays: user.streak_in_days ?? 0,
+        goalPerDay: user.goal_per_day ?? 0,
+    };
+};
+const loadCurrentUser = async () => {
+    const user = await userModel.findOne({ orderByAsc: true });
+    if (!user) {
+        throw new Error("Nenhum usuário cadastrado");
+    }
+    return { row: user, view: buildUserView(user) };
+};
+const mapDeckStatsToView = (deck) => ({
+    id: deck.id,
+    name: deck.name,
+    description: deck.description ?? "Sem descrição",
+    subject: deck.subject ?? "Geral",
+    tags: Array.isArray(deck.tags) ? deck.tags : [],
+    totalCards: Number(deck.total_cards ?? 0),
+    dueCards: Number(deck.due_cards ?? 0),
+    newCards: Number(deck.new_cards ?? 0),
+    progress: Number(deck.progress ?? 0),
+    updatedAt: new Date(deck.updated_at).toISOString(),
+});
+const mapFlashcardToView = (card) => ({
+    id: card.id,
+    question: card.question,
+    answer: card.answer,
+    lastReviewedAt: new Date(card.last_review_date ?? card.created_at).toISOString(),
+    difficulty: (card.difficulty ?? "medium"),
+    tags: Array.isArray(card.tags) ? card.tags : [],
+});
+const formatHistory = (historyRows) => historyRows.map((row) => {
+    const date = new Date(row.day);
+    const label = WEEKDAY_LABELS[date.getDay()];
+    return {
+        label,
+        reviewed: Number(row.reviewed ?? 0),
+        created: Number(row.created ?? 0),
+    };
+});
+const formatFocus = (decks) => {
+    const totalCards = decks.reduce((acc, deck) => acc + deck.totalCards, 0) || 1;
+    const focusMap = new Map();
+    decks.forEach((deck) => {
+        const subject = deck.subject ?? "Geral";
+        focusMap.set(subject, (focusMap.get(subject) ?? 0) + deck.totalCards);
+    });
+    return Array.from(focusMap.entries()).map(([subject, count]) => ({
+        subject,
+        percentage: Math.round((count / totalCards) * 100),
+    }));
+};
+const formatDueIn = (date) => {
+    if (!date) {
+        return "agora";
+    }
+    const dueDate = typeof date === "string" ? new Date(date) : date;
+    const diffMs = dueDate.getTime() - Date.now();
+    if (diffMs <= 0) {
+        return "agora";
+    }
+    const diffMinutes = Math.round(diffMs / (60 * 1000));
+    if (diffMinutes < 60) {
+        return `${diffMinutes} min`;
+    }
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24) {
+        return `${diffHours} h`;
+    }
+    const diffDays = Math.round(diffHours / 24);
+    return `${diffDays} d`;
+};
+const handleRenderError = (res, error) => {
+    console.error(error);
+    res.status(500).send("Não foi possível carregar os dados solicitados.");
+};
 appRouter.get("/", (req, res) => {
-    res.redirect("/app/decks");
+    res.redirect("/app/login");
 });
 appRouter.get("/login", (req, res) => {
     res.render("app/login", {
@@ -200,95 +118,251 @@ appRouter.get("/register", (req, res) => {
         title: "Criar conta",
     });
 });
-appRouter.get("/decks", (req, res) => {
-    const dueToday = mockDecks.reduce((total, deck) => total + deck.dueCards, 0);
-    const totalCards = mockDecks.reduce((total, deck) => total + deck.totalCards, 0);
-    res.render("app/decks", {
-        title: "Meus baralhos",
-        user: mockUser,
-        decks: mockDecks,
-        summary: {
-            totalDecks: mockDecks.length,
-            dueToday,
-            totalCards,
-        },
-    });
+appRouter.get("/decks", async (_, res) => {
+    try {
+        const data = await runInTransaction(async () => {
+            const { row: userRow, view: user } = await loadCurrentUser();
+            const deckStats = await deckModel.findDecksWithStats({ userId: userRow.id });
+            const decks = deckStats.map(mapDeckStatsToView);
+            const dueToday = decks.reduce((total, deck) => total + deck.dueCards, 0);
+            const totalCards = decks.reduce((total, deck) => total + deck.totalCards, 0);
+            return {
+                user,
+                decks,
+                summary: {
+                    totalDecks: decks.length,
+                    dueToday,
+                    totalCards,
+                },
+            };
+        });
+        res.render("app/decks", {
+            title: "Meus baralhos",
+            ...data,
+        });
+    }
+    catch (error) {
+        handleRenderError(res, error);
+    }
 });
 appRouter.get("/decks/:deckId", (req, res) => {
     res.redirect(`/app/decks/${req.params.deckId}/cards`);
 });
-appRouter.get("/decks/:deckId/cards", (req, res) => {
-    const deck = mockDecks.find((item) => item.id === req.params.deckId);
-    if (!deck) {
-        res.status(404).render("app/not-found", {
-            title: "Baralho não encontrado",
-            description: "O baralho selecionado não existe ou foi removido.",
-            actionLabel: "Voltar para os baralhos",
-            actionHref: "/app/decks",
-            user: mockUser,
+appRouter.get("/decks/:deckId/cards", async (req, res) => {
+    try {
+        const { deckId } = req.params;
+        const query = req.query.q?.toString();
+        const difficulty = req.query.difficulty?.toString();
+        const data = await runInTransaction(async () => {
+            const { row: userRow, view: user } = await loadCurrentUser();
+            const deck = await deckModel.findDeckWithStats({ deckId, userId: userRow.id });
+            if (!deck) {
+                return { user, deck: null };
+            }
+            const cards = await flashcardModel.findByDeck({
+                deckId,
+                userId: userRow.id,
+                search: query,
+                difficulty,
+            });
+            const deckView = {
+                ...mapDeckStatsToView(deck),
+                cards: cards.map(mapFlashcardToView),
+            };
+            return { user, deck: deckView };
         });
-        return;
-    }
-    res.render("app/cards", {
-        title: deck.name,
-        user: mockUser,
-        deck,
-    });
-});
-appRouter.get("/decks/:deckId/import", (req, res) => {
-    const deck = mockDecks.find((item) => item.id === req.params.deckId);
-    if (!deck) {
-        res.status(404).render("app/not-found", {
-            title: "Baralho não encontrado",
-            description: "O baralho selecionado não existe ou foi removido.",
-            actionLabel: "Voltar para os baralhos",
-            actionHref: "/app/decks",
-            user: mockUser,
+        if (!data.deck) {
+            res.status(404).render("app/not-found", {
+                title: "Baralho não encontrado",
+                description: "O baralho selecionado não existe ou foi removido.",
+                actionLabel: "Voltar para os baralhos",
+                actionHref: "/app/decks",
+                user: data.user,
+            });
+            return;
+        }
+        res.render("app/cards", {
+            title: data.deck.name,
+            user: data.user,
+            deck: data.deck,
         });
-        return;
     }
-    res.render("app/import", {
-        title: "Adicionar conteúdo",
-        deck,
-        user: mockUser,
-        suggestions: [
-            "Cole anotações de aula para gerar flashcards rapidamente.",
-            "Informe objetivos de aprendizagem para personalizar o baralho.",
-            "Utilize tópicos separados por parágrafos para melhores resultados.",
-        ],
-    });
+    catch (error) {
+        handleRenderError(res, error);
+    }
 });
-appRouter.get("/review", (req, res) => {
-    res.render("app/review", {
-        title: "Revisão",
-        session: mockReviewSession,
-        user: mockUser,
-    });
+appRouter.get("/decks/:deckId/import", async (req, res) => {
+    try {
+        const { deckId } = req.params;
+        const data = await runInTransaction(async () => {
+            const { row: userRow, view: user } = await loadCurrentUser();
+            const deck = await deckModel.findDeckWithStats({ deckId, userId: userRow.id });
+            return { user, deck: deck ? mapDeckStatsToView(deck) : null };
+        });
+        if (!data.deck) {
+            res.status(404).render("app/not-found", {
+                title: "Baralho não encontrado",
+                description: "O baralho selecionado não existe ou foi removido.",
+                actionLabel: "Voltar para os baralhos",
+                actionHref: "/app/decks",
+                user: data.user,
+            });
+            return;
+        }
+        res.render("app/import", {
+            title: "Adicionar conteúdo",
+            deck: data.deck,
+            user: data.user,
+            suggestions: [
+                "Cole anotações de aula para gerar flashcards rapidamente.",
+                "Informe objetivos de aprendizagem para personalizar o baralho.",
+                "Utilize tópicos separados por parágrafos para melhores resultados.",
+            ],
+        });
+    }
+    catch (error) {
+        handleRenderError(res, error);
+    }
 });
-appRouter.get("/progress", (req, res) => {
-    res.render("app/progress", {
-        title: "Indicadores",
-        user: mockUser,
-        indicators: mockIndicators,
-        history: mockProgressHistory,
-        focus: mockLearningFocus,
-    });
+appRouter.get("/review", async (_, res) => {
+    try {
+        const data = await runInTransaction(async () => {
+            const { row: userRow, view: user } = await loadCurrentUser();
+            const [nextCard] = await flashcardModel.findDueCards({ userId: userRow.id, limit: 1 });
+            const totalDue = await flashcardModel.countDueCards({ userId: userRow.id });
+            const session = nextCard
+                ? {
+                    deckName: nextCard.deck_name,
+                    cardNumber: Number(nextCard.position ?? 1),
+                    totalCards: totalDue,
+                    streakInDays: user.streakInDays,
+                    card: {
+                        id: nextCard.id,
+                        question: nextCard.question,
+                        answer: nextCard.answer,
+                        source: nextCard.source ?? "Conteúdo cadastrado manualmente",
+                        tags: nextCard.tags ?? [],
+                        dueIn: formatDueIn(nextCard.next_review_date),
+                    },
+                }
+                : {
+                    deckName: "Você está em dia!",
+                    cardNumber: 0,
+                    totalCards: 0,
+                    streakInDays: user.streakInDays,
+                    card: {
+                        id: "",
+                        question: "Nenhuma carta pendente no momento.",
+                        answer: "Assim que novas cartas estiverem prontas, elas aparecerão aqui.",
+                        source: "Agenda inteligente",
+                        tags: [],
+                        dueIn: "agora",
+                    },
+                };
+            return { user, session };
+        });
+        res.render("app/review", {
+            title: "Revisão",
+            ...data,
+        });
+    }
+    catch (error) {
+        handleRenderError(res, error);
+    }
 });
-appRouter.get("/account", (req, res) => {
-    res.render("app/account", {
-        title: "Minha conta",
-        user: mockUser,
-        preferences: {
-            reminderEmail: true,
-            reminderPush: true,
-            weeklySummary: true,
-            aiSuggestions: false,
-        },
-        integrations: [
-            { id: "calendar", name: "Google Calendar", connected: true },
-            { id: "notion", name: "Notion", connected: false },
-            { id: "drive", name: "Google Drive", connected: true },
-        ],
-    });
+appRouter.get("/progress", async (_, res) => {
+    try {
+        const data = await runInTransaction(async () => {
+            const { row: userRow, view: user } = await loadCurrentUser();
+            const deckStats = await deckModel.findDecksWithStats({ userId: userRow.id });
+            const decks = deckStats.map(mapDeckStatsToView);
+            const historyRows = await flashcardModel.getReviewHistory({ userId: userRow.id, days: 6 });
+            const history = formatHistory(historyRows);
+            const focus = formatFocus(decks);
+            const { total, mastered } = await flashcardModel.countByStatus({ userId: userRow.id });
+            const accuracy = total === 0 ? 0 : Math.round((mastered / total) * 100);
+            const reviewedLast30 = await flashcardModel.countReviewedSince({
+                userId: userRow.id,
+                since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            });
+            const dueToday = decks.reduce((totalDecks, deck) => totalDecks + deck.dueCards, 0);
+            const indicators = [
+                {
+                    id: "accuracy",
+                    title: "Taxa de acertos",
+                    value: `${accuracy}%`,
+                    helperText: "baseado em cartas dominadas",
+                    trend: accuracy >= 70 ? "up" : "steady",
+                    trendValue: accuracy >= 70 ? "+7%" : "estável",
+                },
+                {
+                    id: "streak",
+                    title: "Dias consecutivos",
+                    value: `${user.streakInDays}`,
+                    helperText: "sequência ativa",
+                    trend: user.streakInDays > 0 ? "up" : "steady",
+                    trendValue: user.streakInDays > 0 ? "+1" : "estável",
+                },
+                {
+                    id: "studied",
+                    title: "Cartas estudadas",
+                    value: `${reviewedLast30}`,
+                    helperText: "nos últimos 30 dias",
+                    trend: reviewedLast30 > 0 ? "up" : "steady",
+                    trendValue: reviewedLast30 > 0 ? `+${reviewedLast30}` : "estável",
+                },
+                {
+                    id: "due",
+                    title: "Revisões de hoje",
+                    value: `${dueToday}`,
+                    helperText: "distribuídas em seus baralhos",
+                    trend: dueToday > 0 ? "down" : "steady",
+                    trendValue: dueToday > 0 ? `-${Math.min(dueToday, 5)}` : "estável",
+                },
+            ];
+            return { user, indicators, history, focus };
+        });
+        res.render("app/progress", {
+            title: "Indicadores",
+            ...data,
+        });
+    }
+    catch (error) {
+        handleRenderError(res, error);
+    }
+});
+appRouter.get("/account", async (_, res) => {
+    try {
+        const data = await runInTransaction(async () => {
+            const { row: userRow, view: user } = await loadCurrentUser();
+            const integrations = await integrationModel.findMany({
+                limit: 50,
+                offset: 0,
+                params: [{ key: "user_id", value: userRow.id }],
+                orderByAsc: true,
+            });
+            return {
+                user,
+                preferences: {
+                    reminderEmail: userRow.reminder_email ?? true,
+                    reminderPush: userRow.reminder_push ?? true,
+                    weeklySummary: userRow.weekly_summary ?? true,
+                    aiSuggestions: userRow.ai_suggestions ?? false,
+                },
+                integrations: integrations.map((integration) => ({
+                    id: integration.id,
+                    name: integration.name,
+                    connected: Boolean(integration.connected),
+                })),
+            };
+        });
+        res.render("app/account", {
+            title: "Minha conta",
+            ...data,
+        });
+    }
+    catch (error) {
+        handleRenderError(res, error);
+    }
 });
 export { appRouter };

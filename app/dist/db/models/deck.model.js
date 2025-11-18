@@ -1,53 +1,40 @@
-import { Repository } from "../repository.ts";
-
-export type DeckRow = {
-  id: string;
-  name: string;
-  description: string | null;
-  subject: string | null;
-  tags: string[] | null;
-  user_id: string;
-  created_at: Date;
-  updated_at: Date;
-};
-
+import { Repository } from "../repository.js";
 export class DeckModel extends Repository {
-  constructor() {
-    super({
-      tableName: "decks",
-      idField: "id",
-      publicFields: [
-        "id",
-        "name",
-        "description",
-        "subject",
-        "tags",
-        "user_id",
-        "created_at",
-        "updated_at",
-      ],
-      insertFields: [
-        "id",
-        "name",
-        "description",
-        "subject",
-        "tags",
-        "user_id",
-        "created_at",
-        "updated_at",
-      ],
-      updateFields: [
-        "name",
-        "description",
-        "subject",
-        "tags",
-        "updated_at",
-      ],
-    });
-  }
-
-  public async findDecksWithStats(input: { userId: string }) {
-    const query = `
+    constructor() {
+        super({
+            tableName: "decks",
+            idField: "id",
+            publicFields: [
+                "id",
+                "name",
+                "description",
+                "subject",
+                "tags",
+                "user_id",
+                "created_at",
+                "updated_at",
+            ],
+            insertFields: [
+                "id",
+                "name",
+                "description",
+                "subject",
+                "tags",
+                "user_id",
+                "created_at",
+                "updated_at",
+            ],
+            updateFields: [
+                "name",
+                "description",
+                "subject",
+                "tags",
+                "updated_at",
+            ],
+        });
+    }
+    async findDecksWithStats(input) {
+        const query = `
       SELECT
         d.id,
         d.name,
@@ -69,13 +56,11 @@ export class DeckModel extends Repository {
       GROUP BY d.id
       ORDER BY d.updated_at DESC;
     `;
-
-    return this.executeSql({ query, params: [input.userId] });
-  }
-
-  public async findDeckWithStats(input: { deckId: string; userId: string }) {
-    const decks = await this.executeSql({
-      query: `
+        return this.executeSql({ query, params: [input.userId] });
+    }
+    async findDeckWithStats(input) {
+        const decks = await this.executeSql({
+            query: `
         SELECT
           d.id,
           d.name,
@@ -97,11 +82,9 @@ export class DeckModel extends Repository {
         GROUP BY d.id
         LIMIT 1;
       `,
-      params: [input.userId, input.deckId],
-    });
-
-    return decks.length > 0 ? decks[0] : null;
-  }
+            params: [input.userId, input.deckId],
+        });
+        return decks.length > 0 ? decks[0] : null;
+    }
 }
-
 export const deckModel = new DeckModel();

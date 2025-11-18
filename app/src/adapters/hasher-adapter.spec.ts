@@ -1,5 +1,5 @@
 import { HasherAdapter } from "./hasher-adapter";
-import { FakeData } from "@tests/fake-data";
+import { FakeData } from "../tests/fake-data";
 import bcrypt from "bcryptjs";
 
 jest.mock("bcryptjs", () => ({

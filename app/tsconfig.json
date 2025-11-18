@@ -11,18 +11,7 @@
     "moduleResolution": "bundler", 
     "target": "es2021",
     "rewriteRelativeImportExtensions": true,
-    "allowImportingTsExtensions": true,
-    
-    "baseUrl": ".",
-    "paths": {
-      "@main/*": ["src/main/*"],
-      "@tests/*": ["src/tests/*"],
-      "@db/*": ["src/db/*"],
-      "@utils/*": ["src/utils/*"],
-      "@controllers/*": ["src/controllers/*"],
-      "@views/*": ["src/views/*"],
-      "@usecases/*": ["src/usecases/*"],
-    }
+    "allowImportingTsExtensions": true
   },
   "exclude": ["public/**"],
 }

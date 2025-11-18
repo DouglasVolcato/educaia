@@ -1,5 +1,5 @@
 import { DbConnection } from "./db-connection";
-import { FakeData } from "@tests/fake-data";
+import { FakeData } from "../tests/fake-data";
 import { Repository } from "./repository";
 jest.mock("./db-connection", () => ({
     DbConnection: {
@@ -186,9 +186,9 @@ describe("Repository", () => {
             ];
             dbQueryMock.mockResolvedValueOnce([]);
             await sut.findOne({ params });
-            const where = `${params[0].key} = $1 AND ${params[1].key} = $2 AND 1 = $3`;
-            const expectedSql = `SELECT ${publicFields.join(",")} FROM ${tableName} WHERE ${where} LIMIT 1;`;
-            const expectedParams = [...params.map((param) => param.value), "1"];
+            const where = `${params[0].key} = $1 AND ${params[1].key} = $2`;
+            const expectedSql = `SELECT ${publicFields.join(",")} FROM ${tableName} WHERE ${where} ORDER BY ${idField} DESC LIMIT 1;`;
+            const expectedParams = params.map((param) => param.value);
             expect(DbConnection.query).toHaveBeenCalledWith({
                 sql: expectedSql,
                 params: expectedParams,
@@ -202,6 +202,20 @@ describe("Repository", () => {
             const error = new Error(FakeData.phrase());
             dbQueryMock.mockRejectedValueOnce(error);
             await expect(sut.findOne({ params: [{ key: FakeData.word(), value: FakeData.word() }] })).rejects.toThrow(error);
+        });
+        test("Should allow calling without params", async () => {
+            const tableName = FakeData.word();
+            const idField = FakeData.word();
+            const publicFields = [FakeData.word()];
+            const { sut } = makeSut(tableName, idField, publicFields, [], []);
+            const row = { id: FakeData.uuid() };
+            dbQueryMock.mockResolvedValueOnce([row]);
+            const result = await sut.findOne({ orderByAsc: true });
+            expect(result).toEqual(row);
+            expect(DbConnection.query).toHaveBeenCalledWith({
+                sql: `SELECT ${publicFields.join(",")} FROM ${tableName}  ORDER BY ${idField} ASC LIMIT 1;`,
+                params: [],
+            });
         });
         test("Should return null if connection query has no results", async () => {
             const tableName = FakeData.word();

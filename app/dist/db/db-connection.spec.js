@@ -1,5 +1,5 @@
-import { DbConnection } from "@db/db-connection";
-import { FakeData } from "@tests/fake-data";
+import { DbConnection } from "./db-connection";
+import { FakeData } from "../tests/fake-data";
 import { Pool } from "pg";
 const mockPoolClient = () => {
     return {};

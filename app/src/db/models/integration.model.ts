@@ -1,4 +1,4 @@
-import { Repository } from "@db/repository";
+import { Repository } from "../repository.ts";
 
 export class IntegrationModel extends Repository {
   constructor() {

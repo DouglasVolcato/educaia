@@ -1,5 +1,5 @@
-import { FakeData } from "@tests/fake-data";
 import { ValidatorBuilder, ValidatorTypeEnum } from "./validator-builder";
+import { FakeData } from "../tests/fake-data";
 
 const makeValidator = ({
     field,

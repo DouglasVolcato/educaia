@@ -62,14 +62,5 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
-  },
-  "_moduleAliases": {
-    "@main/*": "dist/src/main/*",
-    "@tests/*": "dist/src/tests/*",
-    "@db/*": "dist/src/db/*",
-    "@utils/*": "dist/src/utils/*",
-    "@controllers/*": "dist/src/controllers/*",
-    "@views/*": "dist/src/views/*",
-    "@usecases/*": "dist/src/usecases/*"
   }
 }

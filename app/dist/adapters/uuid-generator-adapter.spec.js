@@ -1,6 +1,6 @@
+import { UuidGeneratorAdapter } from "./uuid-generator-adapter.js";
 import { v6 as uuidv6 } from "uuid";
-import { UuidGeneratorAdapter } from "./uuid-generator-adapter";
-import { FakeData } from "@tests/fake-data";
+import { FakeData } from "../tests/fake-data.js";
 jest.mock("uuid", () => ({
     v6: jest.fn(),
 }));

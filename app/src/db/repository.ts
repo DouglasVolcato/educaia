@@ -1,4 +1,4 @@
-import { DbConnection } from "./db-connection";
+import { DbConnection } from "./db-connection.ts";
 
 export type InputField = { key: string; value: any };
 
