@@ -11,8 +11,8 @@ create table users (
     name varchar(255),
     email varchar(255),
     password varchar(255),
-    created_at timestamp,
-    updated_at timestamp
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 
 CREATE TRIGGER update_timestamp
@@ -25,8 +25,8 @@ create table decks (
     id varchar(255) primary key,
     name varchar(255),
     user_id varchar(255) references users(id),
-    created_at timestamp,
-    updated_at timestamp
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 
 CREATE TRIGGER update_timestamp
@@ -45,8 +45,8 @@ create table flashcards (
     review_count integer,
     last_review_date timestamp,
     next_review_date timestamp,
-    created_at timestamp,
-    updated_at timestamp
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 
 CREATE TRIGGER update_timestamp
