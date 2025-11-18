@@ -33,8 +33,6 @@ export class UserModel extends Repository {
                 "reminder_push",
                 "weekly_summary",
                 "ai_suggestions",
-                "created_at",
-                "updated_at",
             ],
             updateFields: [
                 "name",
@@ -48,7 +46,6 @@ export class UserModel extends Repository {
                 "reminder_push",
                 "weekly_summary",
                 "ai_suggestions",
-                "updated_at",
             ],
         });
     }

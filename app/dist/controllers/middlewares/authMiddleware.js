@@ -1,7 +1,7 @@
 import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.js";
 import { SESSION_COOKIE_NAME } from "../../constants/session.js";
 import { usersModel } from "../../db/models/users-model.js";
-const PUBLIC_PATHS = new Set(["/login", "/register", "/"]);
+const PUBLIC_PATHS = new Set(["/login", "/register", "/", "/auth/login", "/auth/register"]);
 let jwtAdapter = null;
 const getJwtAdapter = () => {
     if (!jwtAdapter) {
@@ -9,7 +9,15 @@ const getJwtAdapter = () => {
     }
     return jwtAdapter;
 };
-const redirectToLogin = (res) => {
+const redirectToLogin = (req, res) => {
+    const isApiRequest = req.baseUrl?.startsWith("/api");
+    if (isApiRequest) {
+        res
+            .status(401)
+            .setHeader("Content-Type", "text/html; charset=utf-8")
+            .send('<div class="alert alert-danger" role="alert">Sua sessão expirou. Faça login novamente para continuar.</div>');
+        return;
+    }
     res.status(403).redirect("/app/login");
 };
 const extractTokenFromCookies = (req) => {
@@ -34,17 +42,17 @@ export const authMiddleware = async (req, res, next) => {
     try {
         const token = extractTokenFromCookies(req);
         if (!token) {
-            redirectToLogin(res);
+            redirectToLogin(req, res);
             return;
         }
         const payload = getJwtAdapter().verifyToken(token);
         if (!payload?.userId) {
-            redirectToLogin(res);
+            redirectToLogin(req, res);
             return;
         }
         const user = await usersModel.findById(payload.userId);
         if (!user) {
-            redirectToLogin(res);
+            redirectToLogin(req, res);
             return;
         }
         if (!req.body) {
@@ -56,6 +64,6 @@ export const authMiddleware = async (req, res, next) => {
     }
     catch (error) {
         console.error("Failed to authenticate request", error);
-        redirectToLogin(res);
+        redirectToLogin(req, res);
     }
 };
