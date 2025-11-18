@@ -1,8 +1,8 @@
 <% const title = 'Termos de Uso'; %>
 <%- include('../partials/head-landing', { title }) %>
   <body class="gradient-bg">
-    <header class="bg-white border-bottom">
-      <nav class="navbar navbar-expand-lg py-3 container">
+    <header class="bg-body border-bottom shadow-sm">
+      <nav class="navbar navbar-expand-lg py-3 container bg-body">
         <a class="navbar-brand fw-bold text-primary" href="/">EducaIA</a>
         <button
           class="navbar-toggler"
@@ -18,7 +18,11 @@
         <div class="collapse navbar-collapse" id="mainNav">
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-lg-3">
           </ul>
-          <div class="d-flex gap-2 ms-lg-4">
+          <div class="d-flex align-items-center gap-2 ms-lg-4 flex-wrap">
+            <%- include('../partials/theme-toggle', {
+              themeButtonClasses: 'btn btn-outline-secondary d-inline-flex align-items-center gap-2',
+              themeLabelClasses: 'small fw-semibold'
+            }) %>
             <a class="btn btn-outline-secondary" href="/app/login">Entrar</a>
             <a class="btn btn-primary" href="/app/register">Criar conta</a>
           </div>
@@ -29,7 +33,7 @@
     <main class="container py-5">
       <div class="row justify-content-center">
         <div class="col-lg-10 col-xl-8">
-          <article class="bg-white border rounded-4 shadow-sm p-4 p-md-5">
+          <article class="bg-body border rounded-4 shadow-sm p-4 p-md-5">
             <header class="mb-4 text-center">
               <span class="badge bg-primary-subtle text-primary text-uppercase">Documento legal</span>
               <h1 class="fw-bold mt-3">Termos de Uso da EducaIA</h1>

@@ -1,19 +1,19 @@
 import jwt from "jsonwebtoken";
 
 export class TokenHandlerAdapter {
-    private secretKey: string;
+    private readonly secret: string;
 
     public constructor() {
-        this.secretKey = process.env.SECRET_KEY || "";
+        const secret = process.env.JWT_SECRET || "";
+        this.secret = secret;
     }
 
     public generateToken(payload: any): string {
-        return jwt.sign(payload, this.secretKey, {
-            expiresIn: "1h"
-        });
+        return jwt.sign(payload, this.secret, { expiresIn: "1h" });
     }
 
     public verifyToken(token: string): any {
-        return jwt.verify(token, this.secretKey);
+        const decoded = jwt.verify(token, this.secret);
+        return decoded;
     }
 }

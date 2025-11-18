@@ -1,5 +1,143 @@
 :root {
   --edu-gradient: linear-gradient(135deg, #4f46e5 0%, #22d3ee 100%);
+  --theme-toggle-sun-core: #facc15;
+  --theme-toggle-sun-rays: rgba(251, 191, 36, 0.85);
+  --theme-toggle-moon-body: #f8fafc;
+  --theme-toggle-moon-cutout: #f5f7fb;
+  --theme-toggle-moon-shadow: rgba(148, 163, 184, 0.45);
+}
+
+:root[data-bs-theme='dark'] {
+  --edu-gradient: linear-gradient(135deg, #312e81 0%, #0f172a 100%);
+  --theme-toggle-moon-body: #e2e8f0;
+  --theme-toggle-moon-cutout: #020617;
+  --theme-toggle-moon-shadow: rgba(15, 23, 42, 0.65);
+}
+
+:root[data-bs-theme='dark'] body {
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
+:root[data-bs-theme='dark'] .text-secondary {
+  color: #94a3b8 !important;
+}
+
+:root[data-bs-theme='dark'] .bg-white,
+:root[data-bs-theme='dark'] .bg-light,
+:root[data-bs-theme='dark'] .card,
+:root[data-bs-theme='dark'] .list-group-item,
+:root[data-bs-theme='dark'] .feature-card,
+:root[data-bs-theme='dark'] .review-card,
+:root[data-bs-theme='dark'] article {
+  background-color: #0f172a !important;
+  color: inherit;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+:root[data-bs-theme='dark'] .list-group-item {
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+:root[data-bs-theme='dark'] .hero-card {
+  background: var(--edu-gradient);
+  box-shadow: 0 16px 45px rgba(15, 23, 42, 0.45);
+}
+
+:root[data-bs-theme='dark'] .hero-card .btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+:root[data-bs-theme='dark'] .hero-card .btn-outline-light:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.theme-toggle-btn {
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding-inline: 0.85rem;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-toggle-icon {
+  width: 1.85rem;
+  height: 1.85rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.theme-toggle-sun,
+.theme-toggle-moon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.theme-toggle-sun .sun-core {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff8e1, var(--theme-toggle-sun-core));
+  box-shadow: 0 0 12px var(--theme-toggle-sun-rays);
+}
+
+.theme-toggle-sun .sun-rays {
+  position: absolute;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--theme-toggle-sun-rays);
+  opacity: 0.9;
+}
+
+.theme-toggle-moon .moon-body {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--theme-toggle-moon-body);
+  box-shadow: 0 0 10px var(--theme-toggle-moon-shadow);
+  position: relative;
+}
+
+.theme-toggle-moon .moon-body::after {
+  content: "";
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--theme-toggle-moon-cutout);
+  left: 35%;
+  top: -4%;
+  box-shadow: inset 0 0 6px rgba(15, 23, 42, 0.3);
+}
+
+.theme-toggle-moon .moon-body::before {
+  content: "";
+  position: absolute;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.45);
+  top: 18%;
+  left: 25%;
+  box-shadow:
+    0.4rem 0.1rem 0 0 rgba(148, 163, 184, 0.3),
+    0.15rem 0.35rem 0 0 rgba(148, 163, 184, 0.35);
+}
+
+:root[data-bs-theme='dark'] .deck-card:hover {
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.65);
+}
+
+:root[data-bs-theme='dark'] .flashcard-item:hover {
+  border-left-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.15);
 }
 
 body {

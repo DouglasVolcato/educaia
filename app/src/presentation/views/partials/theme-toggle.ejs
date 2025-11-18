@@ -1,0 +1,27 @@
+<%
+  const baseButtonClasses = typeof themeButtonClasses !== 'undefined'
+    ? themeButtonClasses
+    : 'btn btn-outline-secondary d-inline-flex align-items-center gap-2';
+  const buttonClasses = [baseButtonClasses, 'theme-toggle-btn'].join(' ');
+  const labelClasses = typeof themeLabelClasses !== 'undefined'
+    ? themeLabelClasses
+    : 'small fw-semibold d-none d-md-inline';
+%>
+<button
+  class="<%= buttonClasses %>"
+  type="button"
+  data-theme-toggle
+  aria-pressed="false"
+  title="Alternar tema"
+>
+  <span class="theme-toggle-icon" aria-hidden="true">
+    <span class="theme-toggle-sun" data-theme-icon="light">
+      <span class="sun-core"></span>
+      <span class="sun-rays"></span>
+    </span>
+    <span class="theme-toggle-moon d-none" data-theme-icon="dark">
+      <span class="moon-body"></span>
+    </span>
+  </span>
+  <span class="<%= labelClasses %>" data-theme-text>Tema claro</span>
+</button>

@@ -1,39 +1,54 @@
 <% if (hideNavbar) { %>
-<% } else { %>
-  <nav class="navbar navbar-expand-lg bg-body shadow-sm">
-    <div class="container py-2">
+  <header class="bg-body border-bottom shadow-sm">
+    <div class="container py-2 d-flex align-items-center justify-content-between gap-3 flex-wrap">
       <a class="navbar-brand fw-bold" href="/app/decks"><%= locals.brand || 'EducaIA' %></a>
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#app-navbar"
-        aria-controls="app-navbar"
-        aria-expanded="false"
-        aria-label="Alternar navegação"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="app-navbar">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link <%= active === 'decks' ? 'active fw-semibold' : '' %>" href="/app/decks">Baralhos</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link <%= active === 'review' ? 'active fw-semibold' : '' %>" href="/app/review">Revisar</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link <%= active === 'progress' ? 'active fw-semibold' : '' %>" href="/app/progress">Indicadores</a>
-          </li>
-        </ul>
-        <div class="d-flex align-items-center gap-3">
-          <span class="text-secondary small text-end d-none d-md-block">
-            <span class="d-block fw-semibold"><%= user?.name || 'Visitante' %></span>
-            <span class="d-block"><%= user?.email || '' %></span>
-          </span>
-          <a class="btn btn-outline-primary" href="/app/account">Minha conta</a>
+      <%- include('./theme-toggle', {
+        themeButtonClasses: 'btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2',
+        themeLabelClasses: 'small fw-semibold'
+      }) %>
+    </div>
+  </header>
+<% } else { %>
+  <header class="bg-body border-bottom shadow-sm">
+    <nav class="navbar navbar-expand-lg bg-body">
+      <div class="container py-2">
+        <a class="navbar-brand fw-bold" href="/app/decks"><%= locals.brand || 'EducaIA' %></a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#app-navbar"
+          aria-controls="app-navbar"
+          aria-expanded="false"
+          aria-label="Alternar navegação"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="app-navbar">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'decks' ? 'active fw-semibold' : '' %>" href="/app/decks">Baralhos</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'review' ? 'active fw-semibold' : '' %>" href="/app/review">Revisar</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'progress' ? 'active fw-semibold' : '' %>" href="/app/progress">Indicadores</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center gap-3 flex-wrap justify-content-end">
+            <span class="text-secondary small text-end d-none d-md-block">
+              <span class="d-block fw-semibold"><%= user?.name || 'Visitante' %></span>
+              <span class="d-block"><%= user?.email || '' %></span>
+            </span>
+            <%- include('./theme-toggle', {
+              themeButtonClasses: 'btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2',
+              themeLabelClasses: 'small fw-semibold d-none d-lg-inline'
+            }) %>
+            <a class="btn btn-outline-primary" href="/app/account">Minha conta</a>
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
+    </nav>
+  </header>
 <% } %>
