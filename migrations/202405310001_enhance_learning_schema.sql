@@ -1,23 +1,23 @@
 ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'Gratuito',
-    ADD COLUMN IF NOT EXISTS timezone VARCHAR(100) DEFAULT 'America/Sao_Paulo',
-    ADD COLUMN IF NOT EXISTS avatar_url TEXT,
-    ADD COLUMN IF NOT EXISTS streak_in_days INTEGER DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS goal_per_day INTEGER DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS reminder_email BOOLEAN DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS reminder_push BOOLEAN DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS weekly_summary BOOLEAN DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS ai_suggestions BOOLEAN DEFAULT FALSE;
+    ADD COLUMN plan VARCHAR(50) DEFAULT 'Gratuito',
+    ADD COLUMN timezone VARCHAR(100) DEFAULT 'America/Sao_Paulo',
+    ADD COLUMN avatar_url TEXT,
+    ADD COLUMN streak_in_days INTEGER DEFAULT 0,
+    ADD COLUMN goal_per_day INTEGER DEFAULT 0,
+    ADD COLUMN reminder_email BOOLEAN DEFAULT TRUE,
+    ADD COLUMN reminder_push BOOLEAN DEFAULT TRUE,
+    ADD COLUMN weekly_summary BOOLEAN DEFAULT TRUE,
+    ADD COLUMN ai_suggestions BOOLEAN DEFAULT FALSE;
 
 ALTER TABLE decks
-    ADD COLUMN IF NOT EXISTS description TEXT,
-    ADD COLUMN IF NOT EXISTS subject VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+    ADD COLUMN description TEXT,
+    ADD COLUMN subject VARCHAR(255),
+    ADD COLUMN tags TEXT[] DEFAULT '{}';
 
 ALTER TABLE flashcards
-    ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}',
-    ADD COLUMN IF NOT EXISTS difficulty VARCHAR(50) DEFAULT 'medium' CHECK (difficulty IN ('easy', 'medium', 'hard')),
-    ADD COLUMN IF NOT EXISTS source TEXT;
+    ADD COLUMN tags TEXT[] DEFAULT '{}',
+    ADD COLUMN difficulty VARCHAR(50) DEFAULT 'medium' CHECK (difficulty IN ('easy', 'medium', 'hard')),
+    ADD COLUMN source TEXT;
 
 CREATE TABLE IF NOT EXISTS user_integrations (
     id VARCHAR(255) PRIMARY KEY,
