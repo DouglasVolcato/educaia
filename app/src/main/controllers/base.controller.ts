@@ -1,7 +1,7 @@
 import { Application, Request, Response, Router } from "express";
-import { TokenHandlerAdapter } from "../../../adapters/token-handler-adapter.ts";
-import { SESSION_COOKIE_NAME } from "../../../constants/session.ts";
-import { authMiddleware } from "../../../controllers/middlewares/authMiddleware.ts";
+import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.ts";
+import { SESSION_COOKIE_NAME } from "../../constants/session.ts";
+import { authMiddleware } from "../../controllers/middlewares/authMiddleware.ts";
 
 type ControllerOptions = {
   basePath?: string;
@@ -18,7 +18,7 @@ type ToastResponseOptions = {
 
 export type AuthenticatedUser = { id: string; name?: string; email?: string };
 
-export abstract class BaseApiController {
+export abstract class BaseController {
   private static readonly COOKIE_MAX_AGE = 60 * 60 * 1000; // 1 hour
   private static tokenHandler: TokenHandlerAdapter | null = null;
   private static readonly DIFFICULTIES = new Set(["easy", "medium", "hard"]);
@@ -77,16 +77,16 @@ export abstract class BaseApiController {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: BaseApiController.COOKIE_MAX_AGE,
+      maxAge: BaseController.COOKIE_MAX_AGE,
       path: "/",
     });
   }
 
   protected getJwtAdapter() {
-    if (!BaseApiController.tokenHandler) {
-      BaseApiController.tokenHandler = new TokenHandlerAdapter();
+    if (!BaseController.tokenHandler) {
+      BaseController.tokenHandler = new TokenHandlerAdapter();
     }
-    return BaseApiController.tokenHandler;
+    return BaseController.tokenHandler;
   }
 
   protected getAuthenticatedUser(req: Request): AuthenticatedUser | null {
@@ -148,7 +148,7 @@ export abstract class BaseApiController {
   }
 
   protected normalizeDifficulty(value: unknown): "easy" | "medium" | "hard" {
-    if (typeof value === "string" && BaseApiController.DIFFICULTIES.has(value)) {
+    if (typeof value === "string" && BaseController.DIFFICULTIES.has(value)) {
       return value as "easy" | "medium" | "hard";
     }
     return "medium";

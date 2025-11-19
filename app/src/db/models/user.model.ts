@@ -54,6 +54,7 @@ export class UserModel extends Repository {
         "name",
         "email",
         "plan",
+        "password",
         "timezone",
         "avatar_url",
         "streak_in_days",

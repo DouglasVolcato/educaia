@@ -1,7 +1,4 @@
-import { authMiddleware } from "../controllers/middlewares/authMiddleware.ts";
 import { DbConnection } from "../db/db-connection.ts";
-import { appRouter } from "./routes/app.routes.ts";
-import { registerApiControllers } from "./controllers/api/index.ts";
 import { fileURLToPath } from "url";
 import "module-alias/register.js";
 import { inspect } from "util";
@@ -9,6 +6,12 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
+import { AuthController } from "./controllers/api/auth.controller.ts";
+import { DecksController } from "./controllers/api/decks.controller.ts";
+import { AccountController } from "./controllers/api/account.controller.ts";
+import { IntegrationController } from "./controllers/api/integration.controller.ts";
+import { ReviewController } from "./controllers/api/review.controller.ts";
+import { AppController } from "./controllers/app/app.controller.ts";
 
 const normalizeError = (error: unknown) =>
   error instanceof Error ? error : new Error(inspect(error, { depth: null }));
@@ -61,8 +64,12 @@ app.get("/terms", (_, res) => {
   res.render("landing/terms");
 });
 
-registerApiControllers(app);
-app.use("/app", authMiddleware, appRouter);
+new AuthController(app);
+new DecksController(app);
+new AccountController(app);
+new IntegrationController(app);
+new ReviewController(app);
+new AppController(app)
 
 const bootstrap = async () => {
   try {

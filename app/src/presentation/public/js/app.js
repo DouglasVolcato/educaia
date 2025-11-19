@@ -113,22 +113,77 @@
     }
   };
 
-  const handleApiResponse = (xhr) => {
-    if (!xhr) return;
-    const contentType = xhr.getResponseHeader("Content-Type") || "";
-    if (!contentType.includes("application/json")) {
-      return;
+  const applySwapStrategy = (target, strategy, content) => {
+    if (!target || !content) return false;
+    switch (strategy) {
+      case "afterbegin":
+      case "afterend":
+      case "beforebegin":
+      case "beforeend":
+        target.insertAdjacentHTML(strategy, content);
+        return true;
+      case "outerhtml":
+        target.outerHTML = content;
+        return true;
+      default:
+        target.innerHTML = content;
+        return true;
+    }
+  };
+
+  const renderNonJsonResponse = (sourceElement, responseText) => {
+    if (!responseText) return false;
+    if (!(sourceElement instanceof Element)) {
+      showAlert(responseText, "danger");
+      return true;
     }
 
-    try {
-      const payload = JSON.parse(xhr.responseText);
-      if (payload?.message) {
-        const alertType = payload.error ? "danger" : payload.success ? "success" : "info";
-        showAlert(payload.message, alertType);
-      }
-    } catch (error) {
-      console.error("Não foi possível interpretar a resposta da API", error);
+    const targetSelector = sourceElement.getAttribute("hx-target");
+    const target = targetSelector ? document.querySelector(targetSelector) : sourceElement;
+    if (!target) {
+      showAlert(responseText, "danger");
+      return true;
     }
+
+    const swapStrategy = (sourceElement.getAttribute("hx-swap") || "innerHTML").toLowerCase();
+    if (!applySwapStrategy(target, swapStrategy, responseText)) {
+      showAlert(responseText, "danger");
+    }
+    return true;
+  };
+
+  const handleApiResponse = (xhr, sourceElement, { allowNonJsonResponses = false } = {}) => {
+    if (!xhr) return false;
+    const contentType = (xhr.getResponseHeader("Content-Type") || "").toLowerCase();
+
+    if (contentType.includes("application/json")) {
+      try {
+        const payload = JSON.parse(xhr.responseText);
+        if (payload?.message) {
+          const alertType = payload.error ? "danger" : payload.success ? "success" : "info";
+          showAlert(payload.message, alertType);
+          return true;
+        }
+      } catch (error) {
+        console.error("Não foi possível interpretar a resposta da API", error);
+      }
+      return false;
+    }
+
+    if (!allowNonJsonResponses) {
+      return false;
+    }
+
+    const responseText = xhr.responseText?.trim();
+    if (!responseText) {
+      return false;
+    }
+
+    if (contentType.includes("text/html") || contentType.includes("text/plain")) {
+      return renderNonJsonResponse(sourceElement, responseText);
+    }
+
+    return false;
   };
 
   const resolveForm = (element) => {
@@ -157,7 +212,10 @@
     if (form) {
       toggleFormLoadingState(form, false);
     }
-    handleApiResponse(xhr);
+    if (xhr?.status && xhr.status >= 400) {
+      return;
+    }
+    handleApiResponse(xhr, elt);
   });
 
   document.body.addEventListener("htmx:sendError", (event) => {
@@ -176,8 +234,10 @@
     if (form) {
       toggleFormLoadingState(form, false);
     }
-    handleApiResponse(xhr);
-    showAlert("Ocorreu um erro ao processar a requisição.");
+    const handled = handleApiResponse(xhr, elt, { allowNonJsonResponses: true });
+    if (!handled) {
+      showAlert("Ocorreu um erro ao processar a requisição.");
+    }
   });
 
   initTheme();

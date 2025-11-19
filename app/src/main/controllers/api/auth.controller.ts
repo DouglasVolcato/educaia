@@ -1,10 +1,10 @@
 import { Application, Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { BaseApiController } from "./base-api.controller.ts";
+import { BaseController } from "../base.controller.ts";
 import { usersModel } from "../../../db/models/users-model.ts";
 import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
 
-export class AuthController extends BaseApiController {
+export class AuthController extends BaseController {
   constructor(app: Application) {
     super(app, { requiresAuth: false });
   }

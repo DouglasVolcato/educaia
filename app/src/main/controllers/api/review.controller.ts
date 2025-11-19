@@ -1,8 +1,8 @@
 import { Application, Request, Response } from "express";
-import { BaseApiController } from "./base-api.controller.ts";
+import { BaseController } from "../base.controller.ts";
 import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
 
-export class ReviewController extends BaseApiController {
+export class ReviewController extends BaseController {
   constructor(app: Application) {
     super(app);
   }

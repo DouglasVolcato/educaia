@@ -1,8 +1,8 @@
 import { Application, Request, Response } from "express";
-import { BaseApiController } from "./base-api.controller.ts";
+import { BaseController } from "../base.controller.ts";
 import { integrationModel } from "../../../db/models/integration.model.ts";
 
-export class IntegrationController extends BaseApiController {
+export class IntegrationController extends BaseController {
   constructor(app: Application) {
     super(app);
   }

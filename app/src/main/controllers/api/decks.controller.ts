@@ -1,11 +1,11 @@
 import { Application, Request, Response } from "express";
-import { BaseApiController } from "./base-api.controller.ts";
+import { BaseController } from "../base.controller.ts";
 import { deckModel } from "../../../db/models/deck.model.ts";
 import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
 import { InputField } from "../../../db/repository.ts";
 import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
 
-export class DecksController extends BaseApiController {
+export class DecksController extends BaseController {
   constructor(app: Application) {
     super(app);
   }

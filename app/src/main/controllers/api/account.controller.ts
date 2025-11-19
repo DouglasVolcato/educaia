@@ -1,9 +1,10 @@
-import { Application, Request, Response } from "express";
-import { BaseApiController } from "./base-api.controller.ts";
 import { userModel } from "../../../db/models/user.model.ts";
+import { Application, Request, Response } from "express";
+import { BaseController } from "../base.controller.ts";
 import { InputField } from "../../../db/repository.ts";
+import bcrypt from "bcryptjs";
 
-export class AccountController extends BaseApiController {
+export class AccountController extends BaseController {
   constructor(app: Application) {
     super(app);
   }
@@ -22,7 +23,7 @@ export class AccountController extends BaseApiController {
     const updates: InputField[] = [];
     const name = req.body?.name?.toString()?.trim();
     const email = req.body?.email?.toString()?.trim()?.toLowerCase();
-    const timezone = req.body?.timezone?.toString()?.trim();
+    const password = req.body?.password?.toString()?.trim();
 
     if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "name")) {
       if (!name) {
@@ -48,21 +49,16 @@ export class AccountController extends BaseApiController {
       updates.push({ key: "email", value: email });
     }
 
-    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "timezone") && timezone) {
-      updates.push({ key: "timezone", value: timezone });
-    }
-
-    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "goal")) {
-      const goalValue = Number(req.body.goal);
-      if (Number.isNaN(goalValue) || goalValue <= 0) {
+    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "password") && password.length > 0) {
+      if (password && password.length < 6) {
         this.sendToastResponse(res, {
           status: 400,
-          message: "A meta diária precisa ser um número positivo.",
+          message: "A senha deve ter ao menos 6 caracteres.",
           variant: "danger",
         });
         return;
       }
-      updates.push({ key: "goal_per_day", value: goalValue });
+      updates.push({ key: "password", value: await bcrypt.hash(String(password), 10) });
     }
 
     if (updates.length === 0) {

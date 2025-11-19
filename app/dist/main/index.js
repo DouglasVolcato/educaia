@@ -1,7 +1,4 @@
-import { authMiddleware } from "../controllers/middlewares/authMiddleware.js";
 import { DbConnection } from "../db/db-connection.js";
-import { appRouter } from "./routes/app.routes.js";
-import { apiRouter } from "./routes/api.routes.js";
 import { fileURLToPath } from "url";
 import "module-alias/register.js";
 import { inspect } from "util";
@@ -9,6 +6,12 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
+import { AuthController } from "./controllers/api/auth.controller.js";
+import { DecksController } from "./controllers/api/decks.controller.js";
+import { AccountController } from "./controllers/api/account.controller.js";
+import { IntegrationController } from "./controllers/api/integration.controller.js";
+import { ReviewController } from "./controllers/api/review.controller.js";
+import { AppController } from "./controllers/app/app.controller.js";
 const normalizeError = (error) => error instanceof Error ? error : new Error(inspect(error, { depth: null }));
 process.on("uncaughtException", (error) => {
     console.error("uncaughtException", normalizeError(error));
@@ -46,15 +49,17 @@ app.get("/privacy", (_, res) => {
 app.get("/terms", (_, res) => {
     res.render("landing/terms");
 });
-app.use("/api", apiRouter);
-app.use("/app", authMiddleware, appRouter);
+new AuthController(app);
+new DecksController(app);
+new AccountController(app);
+new IntegrationController(app);
+new ReviewController(app);
+new AppController(app);
 const bootstrap = async () => {
     try {
         await DbConnection.connect();
         app.listen(port, () => {
             console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
-            console.log(`Documentation on ${process.env.API_URL}/docs`);
-            console.log(`Client on ${process.env.API_URL}/client`);
         });
     }
     catch (error) {
