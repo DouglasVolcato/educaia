@@ -72,7 +72,7 @@
               </div>
             </div>
 
-            <div class="row g-4">
+            <div id="decksGrid" class="row g-4">
               <% decks.forEach(function(deck) { %>
                 <div class="col-12 col-md-6 col-xl-4">
                   <article class="card deck-card border-0 h-100 shadow-sm">
@@ -151,6 +151,19 @@
               hx-post="/api/decks"
               hx-target="#global-alert-container"
               hx-swap="beforeend"
+              hx-on::after-request="
+                if (event.detail.successful) {
+                  const modalElement = document.getElementById('createDeckModal');
+                  const modalInstance = window.bootstrap?.Modal.getInstance(modalElement);
+                  modalInstance?.hide();
+                  event.target.reset();
+                  htmx.ajax('GET', window.location.pathname, {
+                    target: '#decksGrid',
+                    swap: 'innerHTML',
+                    select: '#decksGrid'
+                  });
+                }
+              "
             >
               <div class="row g-3">
                 <div class="col-md-8">
