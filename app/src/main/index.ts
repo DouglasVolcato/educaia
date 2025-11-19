@@ -1,7 +1,7 @@
 import { authMiddleware } from "../controllers/middlewares/authMiddleware.ts";
 import { DbConnection } from "../db/db-connection.ts";
 import { appRouter } from "./routes/app.routes.ts";
-import { apiRouter } from "./routes/api.routes.ts";
+import { registerApiControllers } from "./controllers/api/index.ts";
 import { fileURLToPath } from "url";
 import "module-alias/register.js";
 import { inspect } from "util";
@@ -61,7 +61,7 @@ app.get("/terms", (_, res) => {
   res.render("landing/terms");
 });
 
-app.use("/api", apiRouter);
+registerApiControllers(app);
 app.use("/app", authMiddleware, appRouter);
 
 const bootstrap = async () => {
@@ -69,8 +69,6 @@ const bootstrap = async () => {
     await DbConnection.connect();
     app.listen(port, () => {
       console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
-      console.log(`Documentation on ${process.env.API_URL}/docs`);
-      console.log(`Client on ${process.env.API_URL}/client`);
     });
   } catch (error) {
     console.error("Failed to start server", normalizeError(error));
