@@ -93,10 +93,10 @@ export class AppController extends BaseController {
     res.redirect(`/app/decks/${req.params.deckId}/cards`);
   };
 
-  private renderDecks = async (_: Request, res: Response) => {
+  private renderDecks = async (req: Request, res: Response) => {
     try {
       const data = await this.runInTransaction(async () => {
-        const { row: userRow, view: user } = await this.loadCurrentUser();
+        const { row: userRow, view: user } = await this.loadCurrentUser(req);
         const deckStats = await deckModel.findDecksWithStats({ userId: userRow.id });
         const decks = deckStats.map((deck) => this.mapDeckStatsToView(deck));
         const dueToday = decks.reduce((total, deck) => total + deck.dueCards, 0);
@@ -126,7 +126,7 @@ export class AppController extends BaseController {
       const difficulty = req.query.difficulty?.toString();
 
       const data = await this.runInTransaction(async () => {
-        const { row: userRow, view: user } = await this.loadCurrentUser();
+        const { row: userRow, view: user } = await this.loadCurrentUser(req);
         const deck = await deckModel.findDeckWithStats({ deckId, userId: userRow.id });
 
         if (!deck) {
@@ -173,7 +173,7 @@ export class AppController extends BaseController {
     try {
       const { deckId } = req.params;
       const data = await this.runInTransaction(async () => {
-        const { row: userRow, view: user } = await this.loadCurrentUser();
+        const { row: userRow, view: user } = await this.loadCurrentUser(req);
         const deck = await deckModel.findDeckWithStats({ deckId, userId: userRow.id });
 
         return { user, deck: deck ? this.mapDeckStatsToView(deck) : null };
@@ -205,10 +205,10 @@ export class AppController extends BaseController {
     }
   };
 
-  private renderReview = async (_: Request, res: Response) => {
+  private renderReview = async (req: Request, res: Response) => {
     try {
       const data = await this.runInTransaction(async () => {
-        const { row: userRow, view: user } = await this.loadCurrentUser();
+        const { row: userRow, view: user } = await this.loadCurrentUser(req);
         const [nextCard] = await flashcardModel.findDueCards({ userId: userRow.id, limit: 1 });
         const totalDue = await flashcardModel.countDueCards({ userId: userRow.id });
 
@@ -254,10 +254,10 @@ export class AppController extends BaseController {
     }
   };
 
-  private renderProgress = async (_: Request, res: Response) => {
+  private renderProgress = async (req: Request, res: Response) => {
     try {
       const data = await this.runInTransaction(async () => {
-        const { row: userRow, view: user } = await this.loadCurrentUser();
+        const { row: userRow, view: user } = await this.loadCurrentUser(req);
         const deckStats = await deckModel.findDecksWithStats({ userId: userRow.id });
         const decks = deckStats.map((deck) => this.mapDeckStatsToView(deck));
         const historyRows = await flashcardModel.getReviewHistory({ userId: userRow.id, days: 6 });
@@ -344,8 +344,8 @@ export class AppController extends BaseController {
     }
   }
 
-  private async loadCurrentUser() {
-    const user = await userModel.findOne({ orderByAsc: true });
+  private async loadCurrentUser(req: Request) {
+    const user = await this.getAuthenticatedUser(req);
 
     if (!user) {
       throw new Error("Nenhum usuário cadastrado");
