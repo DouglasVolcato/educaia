@@ -12,6 +12,8 @@ export type FlashcardView = {
   question: string;
   answer: string;
   lastReviewedAt: string;
+  nextReviewDate: string | null;
+  isDue: boolean;
   difficulty: "easy" | "medium" | "hard";
   tags: string[];
 };
@@ -109,18 +111,21 @@ export class AppController extends BaseController {
 
   private renderDecks = async (req: Request, res: Response) => {
     try {
+      const filter = (req.query.filter?.toString() ?? "all") as "all" | "due" | "recent";
       const data = await this.runInTransaction(async () => {
         const { row: userRow, view: user } = await this.loadCurrentUser(req);
         const deckStats = await deckModel.findDecksWithStats({ userId: userRow.id });
         const decks = deckStats.map((deck) => this.mapDeckStatsToView(deck));
-        const dueToday = decks.reduce((total, deck) => total + deck.dueCards, 0);
-        const totalCards = decks.reduce((total, deck) => total + deck.totalCards, 0);
+        const filteredDecks = this.filterDecks(decks, filter);
+        const dueToday = filteredDecks.reduce((total, deck) => total + deck.dueCards, 0);
+        const totalCards = filteredDecks.reduce((total, deck) => total + deck.totalCards, 0);
 
         return {
           user,
-          decks,
+          decks: filteredDecks,
+          activeFilter: filter,
           summary: {
-            totalDecks: decks.length,
+            totalDecks: filteredDecks.length,
             dueToday,
             totalCards,
           },
@@ -323,6 +328,10 @@ export class AppController extends BaseController {
 
   private renderProgress = async (req: Request, res: Response) => {
     try {
+      const summaryRange = (req.query.range?.toString() ?? "summary") as
+        | "summary"
+        | "daily"
+        | "monthly";
       const data = await this.runInTransaction(async () => {
         const { row: userRow, view: user } = await this.loadCurrentUser(req);
         const deckStats = await deckModel.findDecksWithStats({ userId: userRow.id });
@@ -330,6 +339,13 @@ export class AppController extends BaseController {
       const historyRows = await flashcardModel.getReviewHistory({ userId: userRow.id, days: 6 });
       const history = this.formatHistory(historyRows);
       const focus = this.formatFocus(decks);
+
+        const summaryHistoryDays = summaryRange === "monthly" ? 29 : 6;
+        const summaryHistoryRows = await flashcardModel.getReviewHistory({
+          userId: userRow.id,
+          days: summaryHistoryDays,
+        });
+        const summaryHistory = this.formatHistory(summaryHistoryRows);
 
         const { total, mastered } = await flashcardModel.countByStatus({ userId: userRow.id });
         const accuracy = total === 0 ? 0 : Math.round((mastered / total) * 100);
@@ -375,14 +391,14 @@ export class AppController extends BaseController {
         ];
 
         const summary = this.buildProgressSummary({
-          history,
+          history: summaryHistory,
           user,
           accuracy,
           dueToday,
           indicators,
         });
 
-        return { user, indicators, history, focus, summary };
+        return { user, indicators, history, focus, summary, summaryRange };
       });
 
       res.render("app/progress", {
@@ -446,6 +462,20 @@ export class AppController extends BaseController {
     };
   }
 
+  private filterDecks(decks: DeckView[], filter: "all" | "due" | "recent") {
+    if (filter === "due") {
+      return decks.filter((deck) => deck.dueCards > 0);
+    }
+
+    if (filter === "recent") {
+      return [...decks].sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+    }
+
+    return decks;
+  }
+
   private mapDeckStatsToView(deck: any): DeckView {
     return {
       id: deck.id,
@@ -462,11 +492,14 @@ export class AppController extends BaseController {
   }
 
   private mapFlashcardToView(card: any): FlashcardView {
+    const nextReviewDate = card.next_review_date ? new Date(card.next_review_date).toISOString() : null;
     return {
       id: card.id,
       question: card.question,
       answer: card.answer,
       lastReviewedAt: new Date(card.last_review_date ?? card.created_at).toISOString(),
+      nextReviewDate,
+      isDue: !nextReviewDate || new Date(nextReviewDate).getTime() <= Date.now(),
       difficulty: (card.difficulty ?? "medium") as "easy" | "medium" | "hard",
       tags: Array.isArray(card.tags) ? card.tags : [],
     };
