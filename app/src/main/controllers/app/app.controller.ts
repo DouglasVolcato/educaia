@@ -38,7 +38,6 @@ export type ReviewSession = {
     id: string;
     question: string;
     answer: string;
-    source: string;
     tags: string[];
     dueIn: string;
   };
@@ -71,6 +70,7 @@ export class AppController extends BaseController {
     this.router.get("/decks", this.renderDecks);
     this.router.get("/decks/:deckId", this.redirectDeckToCards);
     this.router.get("/decks/:deckId/cards", this.renderDeckCards);
+    this.router.get("/decks/:deckId/filter-cards", this.renderDeckCardsList);
     this.router.get("/decks/:deckId/import", this.renderDeckImport);
     this.router.get("/review", this.renderReview);
     this.router.get("/progress", this.renderProgress);
@@ -169,6 +169,54 @@ export class AppController extends BaseController {
     }
   };
 
+  private renderDeckCardsList = async (req: Request, res: Response) => {
+    try {
+      const { deckId } = req.params;
+      const query = req.query.q?.toString();
+      const difficulty = req.query.difficulty?.toString();
+
+      const data = await this.runInTransaction(async () => {
+        const { row: userRow, view: user } = await this.loadCurrentUser(req);
+        const deck = await deckModel.findDeckWithStats({ deckId, userId: userRow.id });
+
+        if (!deck) {
+          return { user, deck: null };
+        }
+
+        const cards = await flashcardModel.findByDeck({
+          deckId,
+          userId: userRow.id,
+          search: query,
+          difficulty,
+        });
+
+        const deckView: DeckView = {
+          ...this.mapDeckStatsToView(deck),
+          cards: cards.map((card) => this.mapFlashcardToView(card)),
+        };
+
+        return { deck: deckView };
+      });
+
+      if (!data.deck) {
+        res.status(404).render("app/not-found", {
+          title: "Baralho não encontrado",
+          description: "O baralho selecionado não existe ou foi removido.",
+          actionLabel: "Voltar para os baralhos",
+          actionHref: "/app/decks",
+          user: data.user,
+        });
+        return;
+      }
+
+      res.render("app/cards-list", {
+        deck: data.deck,
+      });
+    } catch (error) {
+      this.handleRenderError(res, error);
+    }
+  };
+
   private renderDeckImport = async (req: Request, res: Response) => {
     try {
       const { deckId } = req.params;
@@ -222,7 +270,6 @@ export class AppController extends BaseController {
               id: nextCard.id,
               question: nextCard.question,
               answer: nextCard.answer,
-              source: nextCard.source ?? "Conteúdo cadastrado manualmente",
               tags: nextCard.tags ?? [],
               dueIn: this.formatDueIn(nextCard.next_review_date),
             },
@@ -236,7 +283,6 @@ export class AppController extends BaseController {
               id: "",
               question: "Nenhuma carta pendente no momento.",
               answer: "Assim que novas cartas estiverem prontas, elas aparecerão aqui.",
-              source: "Agenda inteligente",
               tags: [],
               dueIn: "agora",
             },

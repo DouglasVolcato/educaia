@@ -16,8 +16,7 @@ ALTER TABLE decks
 
 ALTER TABLE flashcards
     ADD COLUMN tags TEXT[] DEFAULT '{}',
-    ADD COLUMN difficulty VARCHAR(50) DEFAULT 'medium' CHECK (difficulty IN ('easy', 'medium', 'hard')),
-    ADD COLUMN source TEXT;
+    ADD COLUMN difficulty VARCHAR(50) DEFAULT 'medium' CHECK (difficulty IN ('easy', 'medium', 'hard'));
 
 CREATE TABLE IF NOT EXISTS user_integrations (
     id VARCHAR(255) PRIMARY KEY,

@@ -4,10 +4,14 @@ import { deckModel } from "../../../db/models/deck.model.ts";
 import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
 import { InputField } from "../../../db/repository.ts";
 import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
+import { DeckCardGeneratorService } from "../../../ai/deck-card-generator.service.ts";
 
 export class DecksController extends BaseController {
+  private readonly cardGenerator: DeckCardGeneratorService;
+
   constructor(app: Application) {
     super(app);
+    this.cardGenerator = new DeckCardGeneratorService();
   }
 
   protected registerRoutes(): void {
@@ -226,7 +230,6 @@ export class DecksController extends BaseController {
           { key: "next_review_date", value: null },
           { key: "difficulty", value: difficulty },
           { key: "tags", value: tags },
-          { key: "source", value: req.body?.source?.toString() ?? "Manual" },
         ],
       });
 
@@ -375,6 +378,8 @@ export class DecksController extends BaseController {
 
     const { deckId } = req.params;
     const content = req.body?.content?.toString()?.trim();
+    const goal = req.body?.goal?.toString()?.trim();
+    const tone = this.normalizeTone(req.body?.tone);
 
     if (!content) {
       res
@@ -394,51 +399,36 @@ export class DecksController extends BaseController {
         return;
       }
 
-      const sections = content
-        .split(/\n+/)
-        .map((section: string) => section.trim())
-        .filter((section: string) => section.length > 0);
+      const cards = await this.generateCardsWithFallback({
+        deckName: deck.name,
+        deckSubject: deck.subject ?? "Geral",
+        content,
+        goal,
+        tone,
+      });
 
-      const cards = sections.slice(0, 3).map((section: string) => ({
-        question: `Qual é o conceito principal sobre "${section.slice(0, 60)}"?`,
-        answer: section.length > 280 ? `${section.slice(0, 277)}...` : section,
-      }));
-
-      const createImmediately = this.parseCheckbox(req.body?.createImmediately);
-
-      if (createImmediately && cards.length > 0) {
-        for (const suggestion of cards) {
-          await flashcardModel.insert({
-            fields: [
-              { key: "id", value: UuidGeneratorAdapter.generate() },
-              { key: "question", value: suggestion.question },
-              { key: "answer", value: suggestion.answer },
-              { key: "user_id", value: user.id },
-              { key: "deck_id", value: deckId },
-              { key: "status", value: "new" },
-              { key: "review_count", value: 0 },
-              { key: "last_review_date", value: null },
-              { key: "next_review_date", value: null },
-              { key: "difficulty", value: "medium" },
-              { key: "tags", value: [] },
-              {
-                key: "source",
-                value: req.body?.goal?.toString() ? `Objetivo: ${req.body.goal}` : "Sugestão da IA",
-              },
-            ],
-          });
-        }
-
-        res
-          .status(200)
-          .setHeader("Content-Type", "text/html; charset=utf-8")
-          .send(
-            `<div class="alert alert-success" role="alert">${cards.length} flashcards foram adicionados diretamente ao baralho.</div>`,
-          );
-        return;
+      for (const suggestion of cards) {
+        await flashcardModel.insert({
+          fields: [
+            { key: "id", value: UuidGeneratorAdapter.generate() },
+            { key: "question", value: suggestion.question },
+            { key: "answer", value: suggestion.answer },
+            { key: "user_id", value: user.id },
+            { key: "deck_id", value: deckId },
+            { key: "status", value: "new" },
+            { key: "review_count", value: 0 },
+            { key: "last_review_date", value: null },
+            { key: "next_review_date", value: null },
+            { key: "difficulty", value: suggestion.difficulty ?? "medium" },
+            { key: "tags", value: suggestion.tags ?? [] },
+          ],
+        });
       }
 
-      res.status(200).setHeader("Content-Type", "text/html; charset=utf-8").send(this.buildCardPreviewMarkup(cards));
+      res
+        .status(201)
+        .setHeader("Content-Type", "text/html; charset=utf-8")
+        .send(this.buildCardPreviewMarkup(deck.id, cards));
     } catch (error) {
       console.error("Failed to generate AI suggestion", error);
       res
@@ -447,4 +437,26 @@ export class DecksController extends BaseController {
         .send('<div class="alert alert-danger" role="alert">Não foi possível gerar sugestões no momento. Tente novamente mais tarde.</div>');
     }
   };
+
+  private async generateCardsWithFallback(input: {
+    deckName: string;
+    deckSubject: string;
+    content: string;
+    goal?: string | null;
+    tone?: "concise" | "standard" | "deep";
+  }) {
+    const result = await this.cardGenerator.generateCards(input);
+    if (result.cards.length > 0) {
+      return result.cards;
+    } else {
+      throw new Error("Erro ao gerar flashcards.");
+    }
+  }
+
+  private normalizeTone(value: unknown): "concise" | "standard" | "deep" {
+    if (value === "concise" || value === "deep") {
+      return value;
+    }
+    return "standard";
+  }
 }

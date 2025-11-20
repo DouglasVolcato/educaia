@@ -123,7 +123,7 @@ export class BaseController {
             variant: "danger",
         });
     }
-    buildCardPreviewMarkup(cards) {
+    buildCardPreviewMarkup(deckId, cards) {
         if (cards.length === 0) {
             return `
         <div class="card border-0 shadow-sm">
@@ -139,7 +139,7 @@ export class BaseController {
           <div class="card border-0 shadow-sm">
             <div class="card-body p-4 d-grid gap-2">
               <div class="d-flex justify-content-between align-items-center">
-                <span class="badge text-bg-primary-subtle text-primary">Sugestão ${index + 1}</span>
+                <span class="badge text-bg-primary-subtle text-primary">Flashcard ${index + 1}</span>
                 <span class="text-secondary small">Gerado pela IA</span>
               </div>
               <p class="fw-semibold mb-1">${card.question}</p>
@@ -148,7 +148,11 @@ export class BaseController {
           </div>
         `)
             .join("");
-        return `<div class="d-flex flex-column gap-3">${items}</div>`;
+        return `
+      <h2 class="h6 text-uppercase text-secondary fw-semibold">Flashcards gerados</h2>
+      <div class="d-flex flex-column gap-3">${items}</div>
+      <a class="btn btn-primary" href="/app/decks/${deckId}">Ir para o baralho</a>
+    `;
     }
 }
 BaseController.COOKIE_MAX_AGE = 60 * 60 * 1000; // 1 hour

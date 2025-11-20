@@ -33,6 +33,7 @@ export class LlmAgent {
 
   public constructor() {
     this.llm = new ChatOpenAI({
+      apiKey: process.env.OPENAI_KEY,
       openAIApiKey: process.env.OPENAI_KEY,
       model: process.env.OPENAI_MODEL
     });

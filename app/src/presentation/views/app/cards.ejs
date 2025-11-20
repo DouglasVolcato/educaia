@@ -100,7 +100,7 @@
                 <h2 class="h4 fw-bold mb-1">Cartas do baralho</h2>
                 <p class="text-secondary mb-0">Reveja e organize as cartas criadas manualmente ou com IA.</p>
               </div>
-              <form class="d-flex flex-wrap gap-2" hx-get="/app/decks/<%= deck.id %>/cards" hx-target="#cardsList" hx-swap="innerHTML" data-loading-overlay="false">
+              <form class="d-flex flex-wrap gap-2" hx-get="/app/decks/<%= deck.id %>/filter-cards" hx-target="#cardsList" hx-swap="innerHTML" data-loading-overlay="false">
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-0"><i class="bi bi-search"></i></span>
                   <input class="form-control border-0" type="search" name="q" placeholder="Buscar por título, tag ou conteúdo" />
@@ -139,7 +139,6 @@
                       </div>
                       <div class="text-secondary small text-lg-end">
                         <p class="mb-1"><i class="bi bi-clock-history me-1"></i> Revisado em <%= new Date(card.lastReviewedAt).toLocaleDateString('pt-BR') %></p>
-                        <p class="mb-0"><i class="bi bi-journal-text me-1"></i> ID: <%= card.id %></p>
                       </div>
                     </div>
                     <div class="border rounded-4 bg-body-tertiary p-3">
@@ -191,15 +190,23 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
           </div>
           <div class="modal-body">
-            <form class="d-grid gap-3" hx-post="/api/decks/<%= deck.id %>/cards" hx-target="#global-alert-container" hx-swap="beforeend">
+            <form 
+              class="d-grid gap-3" 
+              hx-post="/api/decks/<%= deck.id %>/cards" 
+              hx-target="#global-alert-container" 
+              hx-swap="beforeend"
+              hx-on::after-request="if(event.detail.xhr.status === 201) location.reload()"
+            >
               <div>
                 <label class="form-label fw-semibold" for="question">Pergunta</label>
                 <textarea class="form-control" id="question" name="question" rows="3" required></textarea>
               </div>
+
               <div>
                 <label class="form-label fw-semibold" for="answer">Resposta</label>
                 <textarea class="form-control" id="answer" name="answer" rows="4" required></textarea>
               </div>
+
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label fw-semibold" for="difficulty">Dificuldade inicial</label>
@@ -209,11 +216,13 @@
                     <option value="hard">Difícil</option>
                   </select>
                 </div>
+
                 <div class="col-md-6">
                   <label class="form-label fw-semibold" for="tags">Tags</label>
                   <input class="form-control" type="text" id="tags" name="tags" placeholder="ex.: álgebra, equações" />
                 </div>
               </div>
+
               <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="submit" class="btn btn-primary" data-loading-button>

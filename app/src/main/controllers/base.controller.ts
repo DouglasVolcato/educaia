@@ -163,7 +163,7 @@ export abstract class BaseController {
     });
   }
 
-  protected buildCardPreviewMarkup(cards: { question: string; answer: string }[]) {
+  protected buildCardPreviewMarkup(deckId: string, cards: { question: string; answer: string }[]) {
     if (cards.length === 0) {
       return `
         <div class="card border-0 shadow-sm">
@@ -181,7 +181,7 @@ export abstract class BaseController {
           <div class="card border-0 shadow-sm">
             <div class="card-body p-4 d-grid gap-2">
               <div class="d-flex justify-content-between align-items-center">
-                <span class="badge text-bg-primary-subtle text-primary">Sugestão ${index + 1}</span>
+                <span class="badge text-bg-primary-subtle text-primary">Flashcard ${index + 1}</span>
                 <span class="text-secondary small">Gerado pela IA</span>
               </div>
               <p class="fw-semibold mb-1">${card.question}</p>
@@ -192,6 +192,10 @@ export abstract class BaseController {
       )
       .join("");
 
-    return `<div class="d-flex flex-column gap-3">${items}</div>`;
+    return `
+      <h2 class="h6 text-uppercase text-secondary fw-semibold">Flashcards gerados</h2>
+      <div class="d-flex flex-column gap-3">${items}</div>
+      <a class="btn btn-primary" href="/app/decks/${deckId}">Ir para o baralho</a>
+    `;
   }
 }

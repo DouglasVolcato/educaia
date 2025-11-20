@@ -12,7 +12,6 @@ const flashcardFields = [
   "next_review_date",
   "difficulty",
   "tags",
-  "source",
   "created_at",
   "updated_at",
 ];
@@ -35,7 +34,6 @@ export type FlashcardRow = {
   updated_at: Date;
   difficulty: string | null;
   tags: string[] | null;
-  source: string | null;
 };
 
 export class FlashcardModel extends Repository {
@@ -54,7 +52,6 @@ export class FlashcardModel extends Repository {
         "next_review_date",
         "difficulty",
         "tags",
-        "source",
       ],
     });
   }
@@ -99,7 +96,6 @@ export class FlashcardModel extends Repository {
         f.answer,
         f.next_review_date,
         f.tags,
-        f.source,
         d.name AS deck_name,
         ROW_NUMBER() OVER (PARTITION BY f.deck_id ORDER BY f.next_review_date) AS position,
         COUNT(*) OVER () AS total_due

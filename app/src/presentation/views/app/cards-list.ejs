@@ -1,0 +1,57 @@
+<% deck.cards.forEach(function(card) { %>
+  <article class="flashcard-item card border-0 shadow-sm">
+    <div class="card-body p-4 d-flex flex-column gap-3">
+      <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+        <div>
+          <h3 class="h5 fw-semibold mb-1">
+            <%= card.question %>
+          </h3>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <% card.tags.forEach(function(tag) { %>
+              <span class="badge text-bg-light pill">
+                <%= tag %>
+              </span>
+              <% }) %>
+          </div>
+          <span class="badge badge-difficulty <%= card.difficulty %>">
+            <%= card.difficulty==='easy' ? 'Fácil' : card.difficulty==='medium' ? 'Média' : 'Difícil' %>
+          </span>
+        </div>
+        <div class="text-secondary small text-lg-end">
+          <p class="mb-1"><i class="bi bi-clock-history me-1"></i> Revisado em <%= new
+              Date(card.lastReviewedAt).toLocaleDateString('pt-BR') %>
+          </p>
+        </div>
+      </div>
+      <div class="border rounded-4 bg-body-tertiary p-3">
+        <button class="btn btn-outline-primary btn-sm mb-2" type="button" data-action="toggle-answer"
+          data-target="#card-answer-<%= deck.id %>-<%= card.id %>"
+          aria-controls="card-answer-<%= deck.id %>-<%= card.id %>" aria-expanded="false">
+          <span data-visible-label>
+            <i class="bi bi-eye me-1"></i> Revelar resposta
+          </span>
+          <span class="d-none" data-hidden-label>
+            <i class="bi bi-eye-slash me-1"></i> Ocultar resposta
+          </span>
+        </button>
+        <div id="card-answer-<%= deck.id %>-<%= card.id %>" class="d-none">
+          <p class="mb-0">
+            <%= card.answer %>
+          </p>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal"
+          data-bs-target="#editCardModal">
+          <i class="bi bi-pencil me-1"></i> Editar
+        </button>
+        <button class="btn btn-outline-danger btn-sm" type="button">
+          <i class="bi bi-trash me-1"></i> Remover
+        </button>
+        <button class="btn btn-outline-primary btn-sm" type="button">
+          <i class="bi bi-arrow-clockwise me-1"></i> Mover para revisão
+        </button>
+      </div>
+    </div>
+  </article>
+  <% }) %>

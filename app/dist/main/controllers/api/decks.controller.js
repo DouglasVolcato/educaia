@@ -2,6 +2,7 @@ import { BaseController } from "../base.controller.js";
 import { deckModel } from "../../../db/models/deck.model.js";
 import { flashcardModel } from "../../../db/models/flashcard.model.js";
 import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.js";
+import { DeckCardGeneratorService } from "../../../ai/deck-card-generator.service.js";
 export class DecksController extends BaseController {
     constructor(app) {
         super(app);
@@ -173,7 +174,6 @@ export class DecksController extends BaseController {
                         { key: "next_review_date", value: null },
                         { key: "difficulty", value: difficulty },
                         { key: "tags", value: tags },
-                        { key: "source", value: req.body?.source?.toString() ?? "Manual" },
                     ],
                 });
                 this.sendToastResponse(res, {
@@ -304,6 +304,8 @@ export class DecksController extends BaseController {
             }
             const { deckId } = req.params;
             const content = req.body?.content?.toString()?.trim();
+            const goal = req.body?.goal?.toString()?.trim();
+            const tone = this.normalizeTone(req.body?.tone);
             if (!content) {
                 res
                     .status(400)
@@ -320,44 +322,34 @@ export class DecksController extends BaseController {
                         .send('<div class="alert alert-danger" role="alert">Baralho não encontrado.</div>');
                     return;
                 }
-                const sections = content
-                    .split(/\n+/)
-                    .map((section) => section.trim())
-                    .filter((section) => section.length > 0);
-                const cards = sections.slice(0, 3).map((section) => ({
-                    question: `Qual é o conceito principal sobre "${section.slice(0, 60)}"?`,
-                    answer: section.length > 280 ? `${section.slice(0, 277)}...` : section,
-                }));
-                const createImmediately = this.parseCheckbox(req.body?.createImmediately);
-                if (createImmediately && cards.length > 0) {
-                    for (const suggestion of cards) {
-                        await flashcardModel.insert({
-                            fields: [
-                                { key: "id", value: UuidGeneratorAdapter.generate() },
-                                { key: "question", value: suggestion.question },
-                                { key: "answer", value: suggestion.answer },
-                                { key: "user_id", value: user.id },
-                                { key: "deck_id", value: deckId },
-                                { key: "status", value: "new" },
-                                { key: "review_count", value: 0 },
-                                { key: "last_review_date", value: null },
-                                { key: "next_review_date", value: null },
-                                { key: "difficulty", value: "medium" },
-                                { key: "tags", value: [] },
-                                {
-                                    key: "source",
-                                    value: req.body?.goal?.toString() ? `Objetivo: ${req.body.goal}` : "Sugestão da IA",
-                                },
-                            ],
-                        });
-                    }
-                    res
-                        .status(200)
-                        .setHeader("Content-Type", "text/html; charset=utf-8")
-                        .send(`<div class="alert alert-success" role="alert">${cards.length} flashcards foram adicionados diretamente ao baralho.</div>`);
-                    return;
+                const cards = await this.generateCardsWithFallback({
+                    deckName: deck.name,
+                    deckSubject: deck.subject ?? "Geral",
+                    content,
+                    goal,
+                    tone,
+                });
+                for (const suggestion of cards) {
+                    await flashcardModel.insert({
+                        fields: [
+                            { key: "id", value: UuidGeneratorAdapter.generate() },
+                            { key: "question", value: suggestion.question },
+                            { key: "answer", value: suggestion.answer },
+                            { key: "user_id", value: user.id },
+                            { key: "deck_id", value: deckId },
+                            { key: "status", value: "new" },
+                            { key: "review_count", value: 0 },
+                            { key: "last_review_date", value: null },
+                            { key: "next_review_date", value: null },
+                            { key: "difficulty", value: suggestion.difficulty ?? "medium" },
+                            { key: "tags", value: suggestion.tags ?? [] },
+                        ],
+                    });
                 }
-                res.status(200).setHeader("Content-Type", "text/html; charset=utf-8").send(this.buildCardPreviewMarkup(cards));
+                res
+                    .status(201)
+                    .setHeader("Content-Type", "text/html; charset=utf-8")
+                    .send(this.buildCardPreviewMarkup(deck.id, cards));
             }
             catch (error) {
                 console.error("Failed to generate AI suggestion", error);
@@ -367,6 +359,7 @@ export class DecksController extends BaseController {
                     .send('<div class="alert alert-danger" role="alert">Não foi possível gerar sugestões no momento. Tente novamente mais tarde.</div>');
             }
         };
+        this.cardGenerator = new DeckCardGeneratorService();
     }
     registerRoutes() {
         this.router.post("/decks", this.handleCreateDeck);
@@ -392,5 +385,20 @@ export class DecksController extends BaseController {
                 { key: "user_id", value: userId },
             ],
         });
+    }
+    async generateCardsWithFallback(input) {
+        const result = await this.cardGenerator.generateCards(input);
+        if (result.cards.length > 0) {
+            return result.cards;
+        }
+        else {
+            throw new Error("Erro ao gerar flashcards.");
+        }
+    }
+    normalizeTone(value) {
+        if (value === "concise" || value === "deep") {
+            return value;
+        }
+        return "standard";
     }
 }
