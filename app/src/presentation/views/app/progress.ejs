@@ -86,7 +86,7 @@
             </div>
           </section>
 
-          <section class="card border-0 shadow-sm">
+          <section class="card border-0 shadow-sm" id="consolidatedHistory">
             <div class="card-body p-4 p-md-5">
               <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
                 <div>
@@ -94,9 +94,36 @@
                   <p class="text-secondary mb-0">Resumo geral das atividades realizadas.</p>
                 </div>
                 <div class="btn-group" role="group" aria-label="Visualização">
-                  <button type="button" class="btn btn-outline-secondary active">Resumo</button>
-                  <button type="button" class="btn btn-outline-secondary">Diário</button>
-                  <button type="button" class="btn btn-outline-secondary">Mensal</button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary <%= summaryRange === 'summary' ? 'active' : '' %>"
+                    hx-get="/app/progress?range=summary"
+                    hx-target="#consolidatedHistory"
+                    hx-select="#consolidatedHistory"
+                    hx-swap="outerHTML"
+                  >
+                    Resumo
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary <%= summaryRange === 'daily' ? 'active' : '' %>"
+                    hx-get="/app/progress?range=daily"
+                    hx-target="#consolidatedHistory"
+                    hx-select="#consolidatedHistory"
+                    hx-swap="outerHTML"
+                  >
+                    Diário
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary <%= summaryRange === 'monthly' ? 'active' : '' %>"
+                    hx-get="/app/progress?range=monthly"
+                    hx-target="#consolidatedHistory"
+                    hx-select="#consolidatedHistory"
+                    hx-swap="outerHTML"
+                  >
+                    Mensal
+                  </button>
                 </div>
               </div>
               <div class="table-responsive">

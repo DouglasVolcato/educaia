@@ -21,6 +21,7 @@ export class DecksController extends BaseController {
     this.router.post("/decks/:deckId/cards", this.handleCreateCard);
     this.router.put("/decks/:deckId/cards/:cardId", this.handleUpdateCard);
     this.router.delete("/decks/:deckId/cards/:cardId", this.handleDeleteCard);
+    this.router.post("/decks/:deckId/cards/:cardId/move-to-review", this.handleMoveCardToReview);
     this.router.post("/decks/:deckId/generate", this.handleGenerateCards);
   }
 
@@ -168,6 +169,13 @@ export class DecksController extends BaseController {
         return;
       }
 
+      await flashcardModel.delete({
+        params: [
+          { key: "deck_id", value: deckId },
+          { key: "user_id", value: user.id },
+        ],
+      });
+
       await deckModel.delete({
         params: [
           { key: "id", value: deckId },
@@ -272,6 +280,7 @@ export class DecksController extends BaseController {
       const updates: InputField[] = [];
       const question = req.body?.question?.toString()?.trim();
       const answer = req.body?.answer?.toString()?.trim();
+      const nextReviewDate = req.body?.nextReviewDate?.toString();
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "question")) {
         if (!question) {
@@ -305,6 +314,11 @@ export class DecksController extends BaseController {
         updates.push({ key: "tags", value: this.parseTags(req.body?.tags) });
       }
 
+      if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "nextReviewDate")) {
+        const parsedDate = nextReviewDate ? new Date(nextReviewDate) : new Date();
+        updates.push({ key: "next_review_date", value: parsedDate.toISOString() });
+      }
+
       if (updates.length === 0) {
         this.sendToastResponse(res, {
           status: 200,
@@ -323,6 +337,50 @@ export class DecksController extends BaseController {
       });
     } catch (error) {
       this.handleUnexpectedError("Failed to update card", error, res);
+    }
+  };
+
+  private handleMoveCardToReview = async (req: Request, res: Response) => {
+    const user = this.ensureAuthenticatedUser(req, res);
+    if (!user) {
+      return;
+    }
+
+    const { deckId, cardId } = req.params;
+
+    try {
+      const card = await flashcardModel.findOne({
+        params: [
+          { key: "id", value: cardId },
+          { key: "deck_id", value: deckId },
+          { key: "user_id", value: user.id },
+        ],
+      });
+
+      if (!card) {
+        this.sendToastResponse(res, {
+          status: 404,
+          message: "Carta não encontrada.",
+          variant: "danger",
+        });
+        return;
+      }
+
+      await flashcardModel.update({
+        id: cardId,
+        fields: [
+          { key: "next_review_date", value: new Date().toISOString() },
+          { key: "status", value: "learning" },
+        ],
+      });
+
+      this.sendToastResponse(res, {
+        status: 200,
+        message: "Carta movida para revisão imediatamente.",
+        variant: "success",
+      });
+    } catch (error) {
+      this.handleUnexpectedError("Failed to move card to review", error, res);
     }
   };
 
