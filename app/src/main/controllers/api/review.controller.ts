@@ -48,7 +48,10 @@ export class ReviewController extends BaseController {
         return;
       }
 
-      const nextReview = this.computeNextReviewDate(difficulty);
+      const nextReview = this.computeNextReviewDate(
+        difficulty,
+        card.review_count ?? 0,
+      );
 
       await flashcardModel.update({
         id: cardId,
@@ -60,6 +63,9 @@ export class ReviewController extends BaseController {
           { key: "next_review_date", value: nextReview },
         ],
       });
+
+      // Force the review page to refresh so the next card is displayed immediately
+      res.setHeader("HX-Refresh", "true");
 
       this.sendToastResponse(res, {
         status: 200,

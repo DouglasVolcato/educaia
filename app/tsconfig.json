@@ -11,7 +11,10 @@
     "moduleResolution": "bundler", 
     "target": "es2021",
     "rewriteRelativeImportExtensions": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo"
   },
-  "exclude": ["public/**"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "public/**"],
 }

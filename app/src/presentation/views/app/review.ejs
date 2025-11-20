@@ -26,6 +26,11 @@
               <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
                 <div>
                   <span class="badge bg-primary-subtle text-primary pill mb-2">Revisão ativa</span>
+                  <div class="d-flex flex-wrap gap-2 mb-2">
+                    <% session.card.tags.forEach(function(tag) { %>
+                      <span class="badge text-bg-light pill"><%= tag %></span>
+                    <% }) %>
+                  </div>
                   <h2 class="h4 fw-bold mb-1">Pergunta</h2>
                   <p class="card-question mb-0"><%= session.card.question %></p>
                 </div>
@@ -53,11 +58,6 @@
                 <div id="review-answer" class="d-none mt-3">
                   <h3 class="h6 text-uppercase text-secondary">Resposta sugerida</h3>
                   <p class="mb-3"><%= session.card.answer %></p>
-                  <div class="d-flex flex-wrap gap-2">
-                    <% session.card.tags.forEach(function(tag) { %>
-                      <span class="badge text-bg-light pill"><%= tag %></span>
-                    <% }) %>
-                  </div>
                 </div>
               </div>
 
@@ -71,6 +71,8 @@
                       hx-vals='{ "difficulty": "easy", "cardId": "<%= session.card.id %>" }'
                       hx-target="#global-alert-container"
                       hx-swap="beforeend"
+                      hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                      <%= session.card.id ? '' : 'disabled' %>
                       data-loading-overlay="false"
                     >
                       <span class="fw-semibold">Foi fácil</span>
@@ -84,6 +86,8 @@
                       hx-vals='{ "difficulty": "medium", "cardId": "<%= session.card.id %>" }'
                       hx-target="#global-alert-container"
                       hx-swap="beforeend"
+                      hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                      <%= session.card.id ? '' : 'disabled' %>
                       data-loading-overlay="false"
                     >
                       <span class="fw-semibold">Foi ok</span>
@@ -97,6 +101,8 @@
                       hx-vals='{ "difficulty": "hard", "cardId": "<%= session.card.id %>" }'
                       hx-target="#global-alert-container"
                       hx-swap="beforeend"
+                      hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                      <%= session.card.id ? '' : 'disabled' %>
                       data-loading-overlay="false"
                     >
                       <span class="fw-semibold">Foi difícil</span>
@@ -109,37 +115,22 @@
           </section>
 
           <section class="row g-4">
-            <div class="col-lg-6">
+            <div class="col-lg-12">
               <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                   <h2 class="h6 text-uppercase text-secondary fw-semibold">Próximas cartas</h2>
-                  <ul class="list-group list-group-flush">
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                      <span>Pergunta 04</span>
-                      <span class="badge text-bg-light">em 10 min</span>
-                    </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                      <span>Pergunta 05</span>
-                      <span class="badge text-bg-light">em 30 min</span>
-                    </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                      <span>Pergunta 06</span>
-                      <span class="badge text-bg-light">em 2 h</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-6">
-              <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                  <h2 class="h6 text-uppercase text-secondary fw-semibold">Dicas da IA</h2>
-                  <p class="text-secondary">
-                    Foque em comparar permutação, arranjo e combinação com exemplos práticos. Crie associações visuais para memorizar as diferenças principais.
-                  </p>
-                  <button class="btn btn-outline-primary" hx-get="/api/review/hint" hx-target="#global-alert-container" hx-swap="beforeend">
-                    <i class="bi bi-lightbulb me-2"></i> Pedir nova dica
-                  </button>
+                  <% if (nextReviews && nextReviews.length > 0) { %>
+                    <ul class="list-group list-group-flush">
+                      <% nextReviews.forEach(function(card) { %>
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                          <span><%= card.question %></span>
+                          <span class="badge text-bg-light"><%= card.dueIn %></span>
+                        </li>
+                      <% }) %>
+                    </ul>
+                  <% } else { %>
+                    <p class="text-secondary mb-0">Nenhuma carta adicional pendente. Continue estudando para receber novas sugestões.</p>
+                  <% } %>
                 </div>
               </div>
             </div>

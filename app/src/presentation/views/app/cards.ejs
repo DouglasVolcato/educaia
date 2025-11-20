@@ -165,7 +165,15 @@
                       <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#editCardModal">
                         <i class="bi bi-pencil me-1"></i> Editar
                       </button>
-                      <button class="btn btn-outline-danger btn-sm" type="button">
+                      <button
+                        class="btn btn-outline-danger btn-sm"
+                        type="button"
+                        hx-delete="/api/decks/<%= deck.id %>/cards/<%= card.id %>"
+                        hx-confirm="Remover esta carta? Essa ação não pode ser desfeita."
+                        hx-target="#global-alert-container"
+                        hx-swap="beforeend"
+                        hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                      >
                         <i class="bi bi-trash me-1"></i> Remover
                       </button>
                       <button class="btn btn-outline-primary btn-sm" type="button">
@@ -278,22 +286,28 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
       </div>
       <div class="offcanvas-body d-grid gap-3">
-        <form class="d-grid gap-3" hx-put="/api/decks/<%= deck.id %>" hx-target="#global-alert-container" hx-swap="beforeend">
+        <form 
+          class="d-grid gap-3"
+          style="grid-auto-rows: min-content;"
+          hx-put="/api/decks/<%= deck.id %>"
+          hx-on::after-request="if(event.detail.xhr.status === 200) location.reload()"
+        >
           <div>
             <label class="form-label fw-semibold" for="deckNameEdit">Nome do baralho</label>
             <input class="form-control" type="text" id="deckNameEdit" name="name" value="<%= deck.name %>" required />
+          </div>
+          <div>
+            <label class="form-label fw-semibold" for="deckSubject">Assunto</label>
+            <input class="form-control" type="text" id="deckSubject" name="subject" value="<%= deck.subject %>" required />
           </div>
           <div>
             <label class="form-label fw-semibold" for="deckDescriptionEdit">Descrição</label>
             <textarea class="form-control" id="deckDescriptionEdit" name="description" rows="3"><%= deck.description %></textarea>
           </div>
           <div>
-            <label class="form-label fw-semibold" for="deckGoal">Objetivo diário de revisão</label>
-            <input class="form-control" type="number" id="deckGoal" name="dailyGoal" min="1" value="<%= Math.round(deck.totalCards / 5) %>" />
-          </div>
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="smartScheduling" checked />
-            <label class="form-check-label" for="smartScheduling">Habilitar agendamento inteligente com IA</label>
+            <label class="form-label fw-semibold" for="deckTags">Tags</label>
+            <input class="form-control" type="text" id="deckTags" name="tags" placeholder="Ex.: biologia, genética" value="<%= deck.tags.join(', ') %>" />
+            <small class="text-secondary">Separe as tags por vírgula para facilitar a organização.</small>
           </div>
           <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Fechar</button>

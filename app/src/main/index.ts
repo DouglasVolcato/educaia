@@ -72,7 +72,7 @@ new ReviewController(app);
 new AppController(app)
 
 const bootstrap = async () => {
-  try {
+  try {    
     await DbConnection.connect();
     app.listen(port, () => {
       console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
