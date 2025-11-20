@@ -1,5 +1,6 @@
 import { DbConnection } from "./db-connection";
 import { FakeData } from "../tests/fake-data";
+import { AsyncLocalStorage } from "async_hooks";
 import { Pool, PoolClient } from "pg";
 
 const mockPoolClient = (): jest.Mocked<PoolClient> => ({
@@ -46,7 +47,7 @@ const mockEnvVars = () => {
 describe("DbConnection", () => {
     beforeEach(() => {
         (DbConnection as any).pool = undefined;
-        (DbConnection as any).transactionClient = undefined;
+        (DbConnection as any).transactionContext = new AsyncLocalStorage<PoolClient>();
         jest.clearAllMocks();
     });
 
@@ -76,17 +77,10 @@ describe("DbConnection", () => {
     })
 
     describe("Disconnect", () => {
-        test("Should call transaction client release and pool end", async () => {
+        test("Should call pool end when pool exists", async () => {
             mockPoolQuery.mockResolvedValue({ rows: [] } as any)
-            const releaseSpy = jest.fn().mockResolvedValue(undefined);
-            (DbConnection as any).transactionClient = {
-                release: releaseSpy,
-            } as unknown as PoolClient;
-            (DbConnection as any).pool = {
-                end: mockPoolEnd,
-            } as unknown as Pool;
+            await DbConnection.connect();
             await DbConnection.disconnect();
-            expect(releaseSpy).toHaveBeenCalledTimes(1);
             expect(mockPoolEnd).toHaveBeenCalledTimes(1);
         })
 
@@ -98,62 +92,61 @@ describe("DbConnection", () => {
         })
     })
 
-    describe("StartTransaction", () => {
-        test("Should call transaction client query with begin", async () => {
-            mockPoolQuery.mockResolvedValue({ rows: [] } as any)
-            const querySpy = jest.fn().mockResolvedValue(undefined);
-            (DbConnection as any).pool = {
-                connect: jest.fn().mockResolvedValue({ query: querySpy }),
+    describe("runInTransaction", () => {
+        test("Should wrap handler in a transaction and release the client", async () => {
+            const beginSpy = jest.fn().mockResolvedValue(undefined);
+            const commitSpy = jest.fn().mockResolvedValue(undefined);
+            const releaseSpy = jest.fn().mockResolvedValue(undefined);
+            const pool = {
+                connect: jest.fn().mockResolvedValue({
+                    query: jest
+                        .fn()
+                        .mockImplementationOnce(beginSpy)
+                        .mockImplementationOnce(commitSpy),
+                    release: releaseSpy,
+                }),
             } as unknown as Pool;
-            await DbConnection.startTransaction();
-            expect(querySpy).toHaveBeenCalledTimes(1);
-            expect(querySpy).toHaveBeenCalledWith("BEGIN");
-        })
 
-        test("Should throw if pool was not initialized", async () => {
-            await expect(DbConnection.startTransaction()).rejects.toThrow();
-        })
-    })
+            (DbConnection as any).pool = pool;
 
-    describe("Commit", () => {
-        test("Should call transaction query with commit and release", async () => {
-            const querySpy = jest.fn().mockResolvedValue(undefined);
-            const releaseSpy = jest.fn().mockResolvedValue(undefined);
-            (DbConnection as any).transactionClient = {
-                query: querySpy,
-                release: releaseSpy,
-            } as unknown as PoolClient;
-            await DbConnection.commit();
-            expect(querySpy).toHaveBeenCalledTimes(1);
-            expect(querySpy).toHaveBeenCalledWith("COMMIT");
+            const result = await DbConnection.runInTransaction(async () => FakeData.numberInteger());
+
+            expect(pool.connect).toHaveBeenCalledTimes(1);
+            expect(beginSpy).toHaveBeenCalledWith("BEGIN");
+            expect(commitSpy).toHaveBeenCalledWith("COMMIT");
             expect(releaseSpy).toHaveBeenCalledTimes(1);
-            expect((DbConnection as any).transactionClient).toBeUndefined();
-        })
+            expect(result).toBeDefined();
+        });
 
-        test("Should throw if transaction was not started", async () => {
-            await expect(DbConnection.commit()).rejects.toThrow();
-        })
-    })
-
-    describe("Rollback", () => {
-        test("Should call transaction query with rollback and release", async () => {
-            const querySpy = jest.fn().mockResolvedValue(undefined);
+        test("Should rollback and rethrow when handler fails", async () => {
+            const beginSpy = jest.fn().mockResolvedValue(undefined);
+            const rollbackSpy = jest.fn().mockResolvedValue(undefined);
             const releaseSpy = jest.fn().mockResolvedValue(undefined);
-            (DbConnection as any).transactionClient = {
-                query: querySpy,
-                release: releaseSpy,
-            } as unknown as PoolClient;
-            await DbConnection.rollback();
-            expect(querySpy).toHaveBeenCalledTimes(1);
-            expect(querySpy).toHaveBeenCalledWith("ROLLBACK");
-            expect(releaseSpy).toHaveBeenCalledTimes(1);
-            expect((DbConnection as any).transactionClient).toBeUndefined();
-        })
+            const pool = {
+                connect: jest.fn().mockResolvedValue({
+                    query: jest
+                        .fn()
+                        .mockImplementationOnce(beginSpy)
+                        .mockImplementationOnce(rollbackSpy),
+                    release: releaseSpy,
+                }),
+            } as unknown as Pool;
 
-        test("Should throw if transaction was not started", async () => {
-            await expect(DbConnection.rollback()).rejects.toThrow();
-        })
-    })
+            (DbConnection as any).pool = pool;
+
+            const expectedError = new Error("handler failure");
+
+            await expect(
+                DbConnection.runInTransaction(async () => {
+                    throw expectedError;
+                }),
+            ).rejects.toThrow(expectedError);
+
+            expect(beginSpy).toHaveBeenCalledWith("BEGIN");
+            expect(rollbackSpy).toHaveBeenCalledWith("ROLLBACK");
+            expect(releaseSpy).toHaveBeenCalledTimes(1);
+        });
+    });
 
     describe("Query", () => {
         test("Should call pool query with received params", async () => {
@@ -170,22 +163,26 @@ describe("DbConnection", () => {
             expect(querySpy).toHaveBeenCalledWith(queryParams.sql, queryParams.params);
         })
 
-        test("Should call transaction client query when inside a transaction", async () => {
+        test("Should use the transaction client when called inside a transaction", async () => {
             const poolQuerySpy = jest.fn().mockResolvedValue({ rows: [] });
             const transactionQuerySpy = jest.fn().mockResolvedValue({ rows: [] });
+            const releaseSpy = jest.fn().mockResolvedValue(undefined);
+
             (DbConnection as any).pool = {
                 query: poolQuerySpy,
+                connect: jest.fn().mockResolvedValue({ query: transactionQuerySpy, release: releaseSpy }),
             } as unknown as Pool;
-            (DbConnection as any).transactionClient = {
-                query: transactionQuerySpy,
-            } as unknown as PoolClient;
+
             const queryParams = {
                 sql: FakeData.phrase(),
                 params: [FakeData.word()],
             };
-            await DbConnection.query(queryParams);
+
+            await DbConnection.runInTransaction(() => DbConnection.query(queryParams));
+
             expect(poolQuerySpy).not.toHaveBeenCalled();
             expect(transactionQuerySpy).toHaveBeenCalledWith(queryParams.sql, queryParams.params);
+            expect(releaseSpy).toHaveBeenCalledTimes(1);
         })
 
         test("Should throw if pool is not initialized", async () => {

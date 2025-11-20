@@ -379,15 +379,7 @@ export class AppController extends BaseController {
   };
 
   private async runInTransaction<T>(handler: () => Promise<T>) {
-    await DbConnection.open();
-    try {
-      const result = await handler();
-      await DbConnection.commit();
-      return result;
-    } catch (error) {
-      await DbConnection.rollback();
-      throw error;
-    }
+    return DbConnection.runInTransaction(handler);
   }
 
   private async loadCurrentUser(req: Request) {

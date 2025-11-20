@@ -1,8 +1,9 @@
+import { AsyncLocalStorage } from "async_hooks";
 import { Pool, PoolClient, QueryResult } from "pg";
 
 export class DbConnection {
     private static pool: Pool | undefined;
-    private static transactionClient: PoolClient | undefined;
+    private static transactionContext = new AsyncLocalStorage<PoolClient>();
 
     private static ensurePool(): Pool {
         if (!DbConnection.pool) {
@@ -32,44 +33,30 @@ export class DbConnection {
     }
 
     public static async disconnect() {
-        if (DbConnection.transactionClient) {
-            DbConnection.transactionClient.release();
-            DbConnection.transactionClient = undefined;
-        }
-
         if (DbConnection.pool) {
             await DbConnection.pool.end();
             DbConnection.pool = undefined;
         }
     }
 
-    public static async open() {
-        if (!DbConnection.transactionClient) {
-            DbConnection.transactionClient = await DbConnection.ensurePool().connect();
-        }
-        await DbConnection.transactionClient.query("BEGIN");
-    }
+    public static async runInTransaction<T>(handler: () => Promise<T>) {
+        const pool = DbConnection.ensurePool();
+        const client = await pool.connect();
 
-    public static async startTransaction() {
-        await DbConnection.open();
-    }
+        return DbConnection.transactionContext.run(client, async () => {
+            await client.query("BEGIN");
 
-    public static async commit() {
-        if (!DbConnection.transactionClient) {
-            throw new Error("Database connection has not been initialized");
-        }
-        await DbConnection.transactionClient.query("COMMIT");
-        DbConnection.transactionClient.release();
-        DbConnection.transactionClient = undefined;
-    }
-
-    public static async rollback() {
-        if (!DbConnection.transactionClient) {
-            throw new Error("Database connection has not been initialized");
-        }
-        await DbConnection.transactionClient.query("ROLLBACK");
-        DbConnection.transactionClient.release();
-        DbConnection.transactionClient = undefined;
+            try {
+                const result = await handler();
+                await client.query("COMMIT");
+                return result;
+            } catch (error) {
+                await client.query("ROLLBACK");
+                throw error;
+            } finally {
+                client.release();
+            }
+        });
     }
 
     public static async query(query: {
@@ -78,8 +65,10 @@ export class DbConnection {
     }): Promise<any[]> {
         const pool = DbConnection.ensurePool();
 
+        const transactionClient = DbConnection.transactionContext.getStore();
+
         const client: { query: (sql: string, params: any[]) => Promise<QueryResult> } =
-            DbConnection.transactionClient ?? pool;
+            transactionClient ?? pool;
 
         const result = await client.query(query.sql, query.params);
         return result.rows;
