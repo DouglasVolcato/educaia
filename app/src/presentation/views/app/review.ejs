@@ -71,6 +71,8 @@
                       hx-vals='{ "difficulty": "easy", "cardId": "<%= session.card.id %>" }'
                       hx-target="#global-alert-container"
                       hx-swap="beforeend"
+                      hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                      <%= session.card.id ? '' : 'disabled' %>
                       data-loading-overlay="false"
                     >
                       <span class="fw-semibold">Foi fácil</span>
@@ -84,6 +86,8 @@
                       hx-vals='{ "difficulty": "medium", "cardId": "<%= session.card.id %>" }'
                       hx-target="#global-alert-container"
                       hx-swap="beforeend"
+                      hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                      <%= session.card.id ? '' : 'disabled' %>
                       data-loading-overlay="false"
                     >
                       <span class="fw-semibold">Foi ok</span>
@@ -97,6 +101,8 @@
                       hx-vals='{ "difficulty": "hard", "cardId": "<%= session.card.id %>" }'
                       hx-target="#global-alert-container"
                       hx-swap="beforeend"
+                      hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                      <%= session.card.id ? '' : 'disabled' %>
                       data-loading-overlay="false"
                     >
                       <span class="fw-semibold">Foi difícil</span>

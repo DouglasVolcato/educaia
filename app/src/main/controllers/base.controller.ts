@@ -137,15 +137,18 @@ export abstract class BaseController {
   ) {
     const now = new Date();
     const safeReviewCount = Math.max(0, reviewCount);
-    const intervals: Record<typeof difficulty, number> = {
+
+    if (difficulty === "hard") {
+      // mantém a carta no mesmo dia, mas evita que ela bloqueie a fila aparecendo imediatamente
+      return new Date(now.getTime() + 60 * 60 * 1000);
+    }
+
+    const intervals: Record<"easy" | "medium", number> = {
       easy: 3 + safeReviewCount, // aumenta o espaçamento conforme o histórico de acertos
       medium: 1 + Math.floor(safeReviewCount / 2),
-      hard: 0,
     };
+
     const days = intervals[difficulty];
-    if (days === 0) {
-      return now;
-    }
     const nextReview = new Date(now);
     nextReview.setDate(now.getDate() + days);
     return nextReview;

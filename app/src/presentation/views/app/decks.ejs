@@ -124,7 +124,19 @@
                           <li><a class="dropdown-item" href="/app/decks/<%= deck.id %>/cards">Editar baralho</a></li>
                           <li><a class="dropdown-item" href="/app/decks/<%= deck.id %>/import">Gerar flashcards com IA</a></li>
                           <li><hr class="dropdown-divider" /></li>
-                          <li><a class="dropdown-item text-danger" href="#">Excluir</a></li>
+                          <li>
+                            <a
+                              class="dropdown-item text-danger"
+                              href="#"
+                              hx-delete="/api/decks/<%= deck.id %>"
+                              hx-confirm="Deseja remover este baralho? Todas as cartas associadas também serão excluídas."
+                              hx-target="#global-alert-container"
+                              hx-swap="beforeend"
+                              hx-on::after-request="if (event.detail.xhr?.status === 200) location.reload()"
+                            >
+                              Excluir
+                            </a>
+                          </li>
                         </ul>
                       </div>
                     </div>
