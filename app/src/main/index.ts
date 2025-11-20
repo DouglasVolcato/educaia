@@ -1,3 +1,5 @@
+console.log("Starting application 0");
+
 import { DbConnection } from "../db/db-connection.ts";
 import { fileURLToPath } from "url";
 import "module-alias/register.js";
@@ -12,6 +14,8 @@ import { AccountController } from "./controllers/api/account.controller.ts";
 import { IntegrationController } from "./controllers/api/integration.controller.ts";
 import { ReviewController } from "./controllers/api/review.controller.ts";
 import { AppController } from "./controllers/app/app.controller.ts";
+
+console.log("Starting application 1");
 
 const normalizeError = (error: unknown) =>
   error instanceof Error ? error : new Error(inspect(error, { depth: null }));
@@ -28,6 +32,8 @@ dotenv.config({
   path: "./.env",
 });
 
+console.log("Starting application 2");
+
 const port = process.env.PORT;
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +44,8 @@ app.locals.brand = "EducaIA";
 app.locals.staticVersion = "1";
 
 const ONE_MONTH_IN_MS = 1000 * 60 * 60 * 24 * 30;
+
+console.log("Starting application 3");
 
 app.use(cors());
 app.use(express.json());
@@ -64,6 +72,8 @@ app.get("/terms", (_, res) => {
   res.render("landing/terms");
 });
 
+console.log("Starting application 4");
+
 new AuthController(app);
 new DecksController(app);
 new AccountController(app);
@@ -71,9 +81,13 @@ new IntegrationController(app);
 new ReviewController(app);
 new AppController(app)
 
+console.log("Starting application 5");
+
 const bootstrap = async () => {
   try {
+    console.log("Starting application 6");
     await DbConnection.connect();
+    console.log("Starting application 7");
     app.listen(port, () => {
       console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
     });
