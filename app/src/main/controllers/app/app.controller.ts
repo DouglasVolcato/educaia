@@ -44,6 +44,12 @@ export type ReviewSession = {
   streakInDays: number;
 };
 
+export type UpcomingReview = {
+  id: string;
+  question: string;
+  dueIn: string;
+};
+
 export type ProgressIndicator = {
   id: string;
   title: string;
@@ -257,7 +263,8 @@ export class AppController extends BaseController {
     try {
       const data = await this.runInTransaction(async () => {
         const { row: userRow, view: user } = await this.loadCurrentUser(req);
-        const [nextCard] = await flashcardModel.findDueCards({ userId: userRow.id, limit: 1 });
+        const dueCards = await flashcardModel.findDueCards({ userId: userRow.id, limit: 5 });
+        const [nextCard, ...upcomingCards] = dueCards;
         const totalDue = await flashcardModel.countDueCards({ userId: userRow.id });
 
         const session: ReviewSession = nextCard
@@ -288,7 +295,13 @@ export class AppController extends BaseController {
             },
           };
 
-        return { user, session };
+        const nextReviews: UpcomingReview[] = upcomingCards.map((card) => ({
+          id: card.id,
+          question: card.question,
+          dueIn: this.formatDueIn(card.next_review_date),
+        }));
+
+        return { user, session, nextReviews };
       });
 
       res.render("app/review", {

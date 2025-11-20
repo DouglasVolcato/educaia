@@ -48,7 +48,10 @@ export class ReviewController extends BaseController {
         return;
       }
 
-      const nextReview = this.computeNextReviewDate(difficulty);
+      const nextReview = this.computeNextReviewDate(
+        difficulty,
+        card.review_count ?? 0,
+      );
 
       await flashcardModel.update({
         id: cardId,

@@ -131,11 +131,15 @@ export abstract class BaseController {
     return Boolean(value);
   }
 
-  protected computeNextReviewDate(difficulty: "easy" | "medium" | "hard") {
+  protected computeNextReviewDate(
+    difficulty: "easy" | "medium" | "hard",
+    reviewCount = 0,
+  ) {
     const now = new Date();
+    const safeReviewCount = Math.max(0, reviewCount);
     const intervals: Record<typeof difficulty, number> = {
-      easy: 3,
-      medium: 1,
+      easy: 3 + safeReviewCount, // aumenta o espaçamento conforme o histórico de acertos
+      medium: 1 + Math.floor(safeReviewCount / 2),
       hard: 0,
     };
     const days = intervals[difficulty];

@@ -113,20 +113,18 @@
               <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                   <h2 class="h6 text-uppercase text-secondary fw-semibold">Próximas cartas</h2>
-                  <ul class="list-group list-group-flush">
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                      <span>Pergunta 04</span>
-                      <span class="badge text-bg-light">em 10 min</span>
-                    </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                      <span>Pergunta 05</span>
-                      <span class="badge text-bg-light">em 30 min</span>
-                    </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                      <span>Pergunta 06</span>
-                      <span class="badge text-bg-light">em 2 h</span>
-                    </li>
-                  </ul>
+                  <% if (nextReviews && nextReviews.length > 0) { %>
+                    <ul class="list-group list-group-flush">
+                      <% nextReviews.forEach(function(card) { %>
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                          <span><%= card.question %></span>
+                          <span class="badge text-bg-light"><%= card.dueIn %></span>
+                        </li>
+                      <% }) %>
+                    </ul>
+                  <% } else { %>
+                    <p class="text-secondary mb-0">Nenhuma carta adicional pendente. Continue estudando para receber novas sugestões.</p>
+                  <% } %>
                 </div>
               </div>
             </div>
