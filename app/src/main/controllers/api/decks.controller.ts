@@ -235,7 +235,6 @@ export class DecksController extends BaseController {
           { key: "status", value: "new" },
           { key: "review_count", value: 0 },
           { key: "last_review_date", value: null },
-          { key: "next_review_date", value: new Date().toISOString() },
           { key: "difficulty", value: difficulty },
           { key: "tags", value: tags },
         ],
@@ -366,21 +365,20 @@ export class DecksController extends BaseController {
         return;
       }
 
-      await flashcardModel.update({
-        id: cardId,
-        fields: [
-          { key: "next_review_date", value: new Date().toISOString() },
-          { key: "status", value: "learning" },
-        ],
-      });
+      await flashcardModel.updateNextReviewDateToNow(cardId);
 
-      this.sendToastResponse(res, {
-        status: 200,
-        message: "Carta movida para revisão imediatamente.",
-        variant: "success",
-      });
+      res
+        .status(200)
+        .setHeader("Content-Type", "text/html; charset=utf-8")
+        .send(`
+          <span class="badge text-bg-warning d-inline-flex align-items-center gap-1">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Revisão pendente
+          </span>
+        `);
+      return;
     } catch (error) {
-      this.handleUnexpectedError("Failed to move card to review", error, res);
+      this.handleUnexpectedError("Erro ao mover carta para revisão", error, res);
     }
   };
 
@@ -476,7 +474,6 @@ export class DecksController extends BaseController {
             { key: "status", value: "new" },
             { key: "review_count", value: 0 },
             { key: "last_review_date", value: null },
-            { key: "next_review_date", value: new Date().toISOString() },
             { key: "difficulty", value: suggestion.difficulty ?? "medium" },
             { key: "tags", value: suggestion.tags ?? [] },
           ],

@@ -45,7 +45,7 @@ create table flashcards (
     status varchar(255) default 'new' check (status in ('new', 'learning', 'mastered')),
     review_count integer,
     last_review_date timestamp,
-    next_review_date timestamp,
+    next_review_date timestamp default now(),
     tags text[],
     created_at timestamp default now(),
     updated_at timestamp default now()

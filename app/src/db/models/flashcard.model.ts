@@ -56,6 +56,15 @@ export class FlashcardModel extends Repository {
     });
   }
 
+  public async updateNextReviewDateToNow(cardId: string) {
+    const query = `
+      UPDATE flashcards
+      SET next_review_date = NOW()
+      WHERE id = $1;
+    `;
+    await this.executeSql({ query, params: [cardId] });
+  }
+
   public async findByDeck(input: {
     deckId: string;
     userId: string;
