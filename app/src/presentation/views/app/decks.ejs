@@ -290,6 +290,9 @@
           const deckName = trigger?.getAttribute('data-deck-name') ?? '';
 
           deleteDeckConfirm?.setAttribute('hx-delete', `/api/decks/${deckId}`);
+          if (deleteDeckConfirm) {
+            htmx.process(deleteDeckConfirm);
+          }
           if (deleteDeckMessage) {
             deleteDeckMessage.textContent = deckName
               ? `Deseja remover o baralho "${deckName}" e todas as suas cartas?`

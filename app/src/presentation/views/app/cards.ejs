@@ -424,6 +424,7 @@
           deleteConfirm?.setAttribute('hx-delete', `/api/decks/<%= deck.id %>/cards/${cardId}`);
           if (deleteConfirm) {
             deleteConfirm.dataset.cardId = cardId;
+            htmx.process(deleteConfirm);
           }
           if (deleteMessage) {
             deleteMessage.textContent = question

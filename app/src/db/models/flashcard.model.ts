@@ -159,6 +159,18 @@ export class FlashcardModel extends Repository {
     return result.length > 0 ? Number(result[0].reviewed) : 0;
   }
 
+  public async getLastReviewDate(input: { userId: string }) {
+    const query = `
+      SELECT MAX(last_review_date) AS last_review_date
+      FROM flashcards
+      WHERE user_id = $1;
+    `;
+
+    const result = await this.executeSql({ query, params: [input.userId] });
+    const lastReview = result.length > 0 ? result[0].last_review_date : null;
+    return lastReview ? new Date(lastReview) : null;
+  }
+
   public async getReviewHistory(input: { userId: string; days: number }) {
     const query = `
       WITH dates AS (

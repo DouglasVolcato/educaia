@@ -1,6 +1,7 @@
 import { Application, Request, Response } from "express";
 import { BaseController } from "../base.controller.ts";
 import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
+import { userModel } from "../../../db/models/user.model.ts";
 
 export class ReviewController extends BaseController {
   constructor(app: Application) {
@@ -53,6 +54,17 @@ export class ReviewController extends BaseController {
         card.review_count ?? 0,
       );
 
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const reviewsToday = await flashcardModel.countReviewedSince({
+        userId: user.id,
+        since: startOfToday,
+      });
+      const isFirstReviewToday = reviewsToday === 0;
+
+      const lastReviewDate = await flashcardModel.getLastReviewDate({ userId: user.id });
+
       await flashcardModel.update({
         id: cardId,
         fields: [
@@ -63,6 +75,20 @@ export class ReviewController extends BaseController {
           { key: "next_review_date", value: nextReview },
         ],
       });
+
+      if (isFirstReviewToday) {
+        const currentStreak = user.streak_in_days ?? 0;
+        const yesterday = new Date(startOfToday);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const isConsecutiveDay =
+          !!lastReviewDate && lastReviewDate >= yesterday && lastReviewDate < startOfToday;
+
+        await userModel.update({
+          id: user.id,
+          fields: [{ key: "streak_in_days", value: isConsecutiveDay ? currentStreak + 1 : 1 }],
+        });
+      }
 
       // Force the review page to refresh so the next card is displayed immediately
       res.setHeader("HX-Refresh", "true");
