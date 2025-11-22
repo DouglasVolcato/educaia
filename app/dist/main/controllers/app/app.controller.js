@@ -10,10 +10,10 @@ export class AppController extends BaseController {
             res.redirect("/app/login");
         };
         this.renderLogin = (_, res) => {
-            res.render("app/login", { title: "Entrar" });
+            res.render("app/login", { title: "Entrar", googleClientId: process.env.GOOGLE_CLIENT_ID });
         };
         this.renderRegister = (_, res) => {
-            res.render("app/register", { title: "Criar conta" });
+            res.render("app/register", { title: "Criar conta", googleClientId: process.env.GOOGLE_CLIENT_ID });
         };
         this.redirectDeckToCards = (req, res) => {
             res.redirect(`/app/decks/${req.params.deckId}/cards`);

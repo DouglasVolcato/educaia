@@ -1,5 +1,10 @@
 import { BaseController } from "../base.controller.js";
 import { integrationModel } from "../../../db/models/integration.model.js";
+import { z } from "zod";
+const updateIntegrationSchema = z.object({
+    connected: z.union([z.boolean(), z.string()]).optional(),
+    name: z.string().trim().optional(),
+});
 export class IntegrationController extends BaseController {
     constructor(app) {
         super(app);
@@ -10,6 +15,12 @@ export class IntegrationController extends BaseController {
             }
             const { integrationId } = req.params;
             try {
+                const parsed = updateIntegrationSchema.safeParse(req.body ?? {});
+                if (!parsed.success) {
+                    const message = parsed.error.errors[0]?.message ?? "Dados inválidos.";
+                    this.sendToastResponse(res, { status: 400, message, variant: "danger" });
+                    return;
+                }
                 const integration = await integrationModel.findOne({
                     params: [
                         { key: "id", value: integrationId },
@@ -24,11 +35,13 @@ export class IntegrationController extends BaseController {
                     });
                     return;
                 }
+                const connected = this.parseCheckbox(parsed.data.connected);
+                const integrationName = parsed.data.name?.length ? parsed.data.name : integration.name;
                 await integrationModel.update({
                     id: integrationId,
                     fields: [
-                        { key: "connected", value: this.parseCheckbox(req.body?.connected) },
-                        { key: "name", value: req.body?.name?.toString() ?? integration.name },
+                        { key: "connected", value: connected },
+                        { key: "name", value: integrationName },
                     ],
                 });
                 this.sendToastResponse(res, {

@@ -5,6 +5,34 @@ import { BaseController } from "../base.controller.ts";
 import { usersModel } from "../../../db/models/users-model.ts";
 import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
 import { authRateLimiter } from "../rate-limiters.ts";
+import { z } from "zod";
+
+const registerSchema = z
+  .object({
+    firstName: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+    lastName: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+    email: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+    password: z.string().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+    confirmPassword: z.string().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "As senhas informadas não conferem.",
+      });
+    }
+  });
+
+const loginSchema = z.object({
+  email: z.string().trim().min(1, "Informe seu e-mail e senha para continuar."),
+  password: z.string().min(1, "Informe seu e-mail e senha para continuar."),
+});
+
+const googleLoginSchema = z.object({
+  credential: z.string().trim().min(1, "Token do Google inválido ou ausente."),
+});
 
 export class AuthController extends BaseController {
   constructor(app: Application) {
@@ -52,27 +80,18 @@ export class AuthController extends BaseController {
   }
 
   private handleRegister = async (req: Request, res: Response) => {
-    const { firstName, lastName, email, password, confirmPassword } = req.body ?? {};
+    const parsed = registerSchema.safeParse(req.body ?? {});
 
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "Preencha todos os campos obrigatórios para criar sua conta.",
-        variant: "danger",
-      });
+    if (!parsed.success) {
+      const message = parsed.error.errors[0]?.message ?? "Dados inválidos.";
+      this.sendToastResponse(res, { status: 400, message, variant: "danger" });
       return;
     }
 
-    if (password !== confirmPassword) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "As senhas informadas não conferem.",
-        variant: "danger",
-      });
-      return;
-    }
-
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedEmail = parsed.data.email.trim().toLowerCase();
+    const firstName = parsed.data.firstName.trim();
+    const lastName = parsed.data.lastName.trim();
+    const password = parsed.data.password;
 
     try {
       const existingUser = await usersModel.findByEmail(normalizedEmail);
@@ -115,18 +134,16 @@ export class AuthController extends BaseController {
   };
 
   private handleLogin = async (req: Request, res: Response) => {
-    const { email, password } = req.body ?? {};
+    const parsed = loginSchema.safeParse(req.body ?? {});
 
-    if (!email || !password) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "Informe seu e-mail e senha para continuar.",
-        variant: "danger",
-      });
+    if (!parsed.success) {
+      const message = parsed.error.errors[0]?.message ?? "Dados inválidos.";
+      this.sendToastResponse(res, { status: 400, message, variant: "danger" });
       return;
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedEmail = parsed.data.email.trim().toLowerCase();
+    const password = parsed.data.password;
 
     try {
       const user = await usersModel.findByEmail(normalizedEmail);
@@ -169,15 +186,12 @@ export class AuthController extends BaseController {
   };
 
   private handleGoogleLogin = async (req: Request, res: Response) => {
-    const { credential } = req.body ?? {};
+    const parsed = googleLoginSchema.safeParse(req.body ?? {});
     const clientId = process.env.GOOGLE_CLIENT_ID;
 
-    if (!credential || typeof credential !== "string" || credential.trim().length === 0) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "Token do Google inválido ou ausente.",
-        variant: "danger",
-      });
+    if (!parsed.success) {
+      const message = parsed.error.errors[0]?.message ?? "Token do Google inválido ou ausente.";
+      this.sendToastResponse(res, { status: 400, message, variant: "danger" });
       return;
     }
 
@@ -191,7 +205,7 @@ export class AuthController extends BaseController {
     }
 
     try {
-      const profile = await this.validateGoogleCredential(credential, clientId);
+      const profile = await this.validateGoogleCredential(parsed.data.credential, clientId);
 
       if (!profile) {
         this.sendToastResponse(res, {

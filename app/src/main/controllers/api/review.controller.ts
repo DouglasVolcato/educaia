@@ -2,6 +2,15 @@ import { Application, Request, Response } from "express";
 import { BaseController } from "../base.controller.ts";
 import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
 import { userModel } from "../../../db/models/user.model.ts";
+import { z } from "zod";
+
+const gradeCardSchema = z.object({
+  cardId: z.string().trim().min(1, "Informe a carta que deseja avaliar."),
+  difficulty: z
+    .string()
+    .optional()
+    .transform((value) => (value === "easy" || value === "hard" || value === "medium" ? value : "medium")),
+});
 
 export class ReviewController extends BaseController {
   constructor(app: Application) {
@@ -20,17 +29,16 @@ export class ReviewController extends BaseController {
       return;
     }
 
-    const cardId = req.body?.cardId?.toString();
-    const difficulty = this.normalizeDifficulty(req.body?.difficulty);
+    const parsed = gradeCardSchema.safeParse(req.body ?? {});
 
-    if (!cardId) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "Informe a carta que deseja avaliar.",
-        variant: "danger",
-      });
+    if (!parsed.success) {
+      const message = parsed.error.errors[0]?.message ?? "Dados inválidos.";
+      this.sendToastResponse(res, { status: 400, message, variant: "danger" });
       return;
     }
+
+    const cardId = parsed.data.cardId;
+    const difficulty = this.normalizeDifficulty(parsed.data.difficulty);
 
     try {
       const card = (await flashcardModel.findOne({

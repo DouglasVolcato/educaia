@@ -2,6 +2,7 @@ import { Router } from "express";
 import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.js";
 import { SESSION_COOKIE_NAME } from "../../constants/session.js";
 import { authMiddleware } from "../../controllers/middlewares/authMiddleware.js";
+import { defaultRateLimiter } from "./rate-limiters.js";
 export class BaseController {
     constructor(app, options = {}) {
         this.app = app;
@@ -23,6 +24,8 @@ export class BaseController {
         });
     }
     setupMiddlewares() {
+        const rateLimiter = this.options.rateLimiter ?? defaultRateLimiter;
+        this.router.use(rateLimiter);
         if (this.options.requiresAuth ?? true) {
             this.router.use(authMiddleware);
         }
