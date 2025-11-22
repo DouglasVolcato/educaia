@@ -3,6 +3,13 @@ import { Application, Request, Response } from "express";
 import { BaseController } from "../base.controller.ts";
 import { InputField } from "../../../db/repository.ts";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
+
+const accountUpdateSchema = z.object({
+  name: z.string().trim().min(1, "Informe um nome válido.").optional(),
+  email: z.string().trim().email("Informe um e-mail válido.").optional(),
+  password: z.string().trim().min(6, "A senha deve ter ao menos 6 caracteres.").optional(),
+});
 
 export class AccountController extends BaseController {
   constructor(app: Application) {
@@ -20,45 +27,29 @@ export class AccountController extends BaseController {
       return;
     }
 
+    const parsed = accountUpdateSchema.safeParse(req.body ?? {});
+
+    if (!parsed.success) {
+      const message = parsed.error.errors[0]?.message ?? "Dados inválidos.";
+      this.sendToastResponse(res, { status: 400, message, variant: "danger" });
+      return;
+    }
+
     const updates: InputField[] = [];
-    const name = req.body?.name?.toString()?.trim();
-    const email = req.body?.email?.toString()?.trim()?.toLowerCase();
-    const password = req.body?.password?.toString()?.trim();
+    const hasName = Object.prototype.hasOwnProperty.call(parsed.data, "name");
+    const hasEmail = Object.prototype.hasOwnProperty.call(parsed.data, "email");
+    const hasPassword = Object.prototype.hasOwnProperty.call(parsed.data, "password");
 
-    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "name")) {
-      if (!name) {
-        this.sendToastResponse(res, {
-          status: 400,
-          message: "Informe um nome válido.",
-          variant: "danger",
-        });
-        return;
-      }
-      updates.push({ key: "name", value: name });
+    if (hasName && parsed.data.name) {
+      updates.push({ key: "name", value: parsed.data.name });
     }
 
-    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "email")) {
-      if (!email) {
-        this.sendToastResponse(res, {
-          status: 400,
-          message: "Informe um e-mail válido.",
-          variant: "danger",
-        });
-        return;
-      }
-      updates.push({ key: "email", value: email });
+    if (hasEmail && parsed.data.email) {
+      updates.push({ key: "email", value: parsed.data.email.toLowerCase() });
     }
 
-    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "password") && password.length > 0) {
-      if (password && password.length < 6) {
-        this.sendToastResponse(res, {
-          status: 400,
-          message: "A senha deve ter ao menos 6 caracteres.",
-          variant: "danger",
-        });
-        return;
-      }
-      updates.push({ key: "password", value: await bcrypt.hash(String(password), 10) });
+    if (hasPassword && parsed.data.password) {
+      updates.push({ key: "password", value: await bcrypt.hash(parsed.data.password, 10) });
     }
 
     if (updates.length === 0) {
