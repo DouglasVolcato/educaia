@@ -1,0 +1,17 @@
+/*! Bootstrap Icons v1.11.3 (local copy) | MIT License | https://icons.getbootstrap.com */
+@font-face {
+  font-family: "bootstrap-icons";
+  src: url("../fonts/bootstrap-icons.woff2") format("woff2"), url("../fonts/bootstrap-icons.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+.bi::before {
+  display: inline-block;
+  font-family: "bootstrap-icons" !important;
+  font-style: normal;
+  font-weight: normal !important;
+  line-height: 1;
+  text-transform: none;
+  speak: none;
+}
+/* Icon glyphs omitted in offline placeholder. */
