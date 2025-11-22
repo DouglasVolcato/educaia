@@ -1,4 +1,5 @@
 import { Application, Request, Response } from "express";
+import { z } from "zod";
 import { BaseController } from "../base.controller.ts";
 import { integrationModel } from "../../../db/models/integration.model.ts";
 
@@ -18,6 +19,16 @@ export class IntegrationController extends BaseController {
     }
 
     const { integrationId } = req.params;
+
+    const schema = z.object({
+      connected: z.coerce.boolean(),
+      name: z.string().trim().min(1, "Informe um nome válido para a integração.").optional(),
+    });
+
+    const validated = this.validateSchema(schema, req.body, res);
+    if (!validated) {
+      return;
+    }
 
     try {
       const integration = await integrationModel.findOne({
@@ -39,8 +50,8 @@ export class IntegrationController extends BaseController {
       await integrationModel.update({
         id: integrationId,
         fields: [
-          { key: "connected", value: this.parseCheckbox(req.body?.connected) },
-          { key: "name", value: req.body?.name?.toString() ?? integration.name },
+          { key: "connected", value: validated.connected },
+          { key: "name", value: validated.name ?? integration.name },
         ],
       });
 

@@ -1,4 +1,5 @@
 import { Application, Request, Response, Router } from "express";
+import { z } from "zod";
 import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.ts";
 import { SESSION_COOKIE_NAME } from "../../constants/session.ts";
 import { authMiddleware } from "../../controllers/middlewares/authMiddleware.ts";
@@ -159,6 +160,25 @@ export abstract class BaseController {
       return value as "easy" | "medium" | "hard";
     }
     return "medium";
+  }
+
+  protected validateSchema<T>(schema: z.ZodType<T>, data: unknown, res: Response): T | null {
+    const result = schema.safeParse(data);
+
+    if (!result.success) {
+      const message =
+        result.error.issues[0]?.message ??
+        "Alguns dados informados são inválidos. Verifique e tente novamente.";
+
+      this.sendToastResponse(res, {
+        status: 400,
+        message,
+        variant: "danger",
+      });
+      return null;
+    }
+
+    return result.data;
   }
 
   protected handleUnexpectedError(context: string, error: unknown, res: Response) {

@@ -1,4 +1,5 @@
 import { Application, Request, Response } from "express";
+import { z } from "zod";
 import { BaseController } from "../base.controller.ts";
 import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
 import { userModel } from "../../../db/models/user.model.ts";
@@ -20,22 +21,22 @@ export class ReviewController extends BaseController {
       return;
     }
 
-    const cardId = req.body?.cardId?.toString();
-    const difficulty = this.normalizeDifficulty(req.body?.difficulty);
+    const schema = z.object({
+      cardId: z.string().trim().min(1, "Informe a carta que deseja avaliar."),
+      difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+    });
 
-    if (!cardId) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "Informe a carta que deseja avaliar.",
-        variant: "danger",
-      });
+    const validated = this.validateSchema(schema, req.body, res);
+    if (!validated) {
       return;
     }
+
+    const difficulty = this.normalizeDifficulty(validated.difficulty);
 
     try {
       const card = (await flashcardModel.findOne({
         params: [
-          { key: "id", value: cardId },
+          { key: "id", value: validated.cardId },
           { key: "user_id", value: user.id },
         ],
       })) as FlashcardRow | null;
@@ -66,7 +67,7 @@ export class ReviewController extends BaseController {
       const lastReviewDate = await flashcardModel.getLastReviewDate({ userId: user.id });
 
       await flashcardModel.update({
-        id: cardId,
+        id: validated.cardId,
         fields: [
           { key: "difficulty", value: difficulty },
           { key: "status", value: difficulty === "easy" ? "mastered" : "learning" },

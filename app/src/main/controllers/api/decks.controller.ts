@@ -1,4 +1,5 @@
 import { Application, Request, Response } from "express";
+import { z } from "zod";
 import { BaseController } from "../base.controller.ts";
 import { deckModel } from "../../../db/models/deck.model.ts";
 import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
@@ -25,15 +26,6 @@ export class DecksController extends BaseController {
     this.router.post("/decks/:deckId/generate", this.handleGenerateCards);
   }
 
-  private buildDeckParams(req: Request) {
-    return {
-      name: req.body?.name?.toString()?.trim(),
-      description: req.body?.description?.toString()?.trim() ?? null,
-      subject: req.body?.subject?.toString()?.trim() ?? null,
-      tags: this.parseTags(req.body?.tags),
-    };
-  }
-
   private ensureDeckBelongsToUser(deckId: string, userId: string) {
     return deckModel.findOne({
       params: [
@@ -49,15 +41,27 @@ export class DecksController extends BaseController {
       return;
     }
 
-    const params = this.buildDeckParams(req);
-    if (!params.name || !params.subject) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "Informe ao menos o nome e o assunto do baralho.",
-        variant: "danger",
-      });
+    const schema = z.object({
+      name: z.string().trim().min(1, "Informe o nome do baralho."),
+      description: z
+        .string()
+        .trim()
+        .transform((value) => (value.length > 0 ? value : null))
+        .optional()
+        .default(null),
+      subject: z.string().trim().min(1, "Informe o assunto do baralho."),
+      tags: z.union([z.array(z.string()), z.string()]).optional(),
+    });
+
+    const validated = this.validateSchema(schema, req.body, res);
+    if (!validated) {
       return;
     }
+
+    const params = {
+      ...validated,
+      tags: this.parseTags(validated.tags),
+    };
 
     try {
       await deckModel.insert({
@@ -100,11 +104,26 @@ export class DecksController extends BaseController {
         return;
       }
 
-      const params = this.buildDeckParams(req);
+      const schema = z.object({
+        name: z.string().trim().min(1, "O nome do baralho não pode ficar em branco.").optional(),
+        description: z
+          .string()
+          .trim()
+          .transform((value) => (value.length > 0 ? value : null))
+          .optional(),
+        subject: z.string().trim().min(1, "Informe um assunto válido para o baralho.").optional(),
+        tags: z.union([z.array(z.string()), z.string()]).optional(),
+      });
+
+      const validated = this.validateSchema(schema, req.body, res);
+      if (!validated) {
+        return;
+      }
+
       const updates: InputField[] = [];
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "name")) {
-        if (!params.name) {
+        if (!validated.name) {
           this.sendToastResponse(res, {
             status: 400,
             message: "O nome do baralho não pode ficar em branco.",
@@ -112,19 +131,19 @@ export class DecksController extends BaseController {
           });
           return;
         }
-        updates.push({ key: "name", value: params.name });
+        updates.push({ key: "name", value: validated.name });
       }
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "description")) {
-        updates.push({ key: "description", value: params.description });
+        updates.push({ key: "description", value: validated.description ?? null });
       }
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "subject")) {
-        updates.push({ key: "subject", value: params.subject });
+        updates.push({ key: "subject", value: validated.subject ?? null });
       }
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "tags")) {
-        updates.push({ key: "tags", value: params.tags });
+        updates.push({ key: "tags", value: this.parseTags(validated.tags) });
       }
 
       if (updates.length === 0) {
@@ -200,19 +219,20 @@ export class DecksController extends BaseController {
     }
 
     const { deckId } = req.params;
-    const question = req.body?.question?.toString()?.trim();
-    const answer = req.body?.answer?.toString()?.trim();
-    const difficulty = this.normalizeDifficulty(req.body?.difficulty);
-    const tags = this.parseTags(req.body?.tags);
+    const schema = z.object({
+      question: z.string().trim().min(1, "Informe a pergunta da carta."),
+      answer: z.string().trim().min(1, "Informe a resposta da carta."),
+      difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+      tags: z.union([z.array(z.string()), z.string()]).optional(),
+    });
 
-    if (!question || !answer) {
-      this.sendToastResponse(res, {
-        status: 400,
-        message: "Informe pergunta e resposta para criar uma carta.",
-        variant: "danger",
-      });
+    const validated = this.validateSchema(schema, req.body, res);
+    if (!validated) {
       return;
     }
+
+    const difficulty = this.normalizeDifficulty(validated.difficulty);
+    const tags = this.parseTags(validated.tags);
 
     try {
       const deck = await this.ensureDeckBelongsToUser(deckId, user.id);
@@ -225,14 +245,14 @@ export class DecksController extends BaseController {
         return;
       }
 
-      await flashcardModel.insert({
-        fields: [
-          { key: "id", value: UuidGeneratorAdapter.generate() },
-          { key: "question", value: question },
-          { key: "answer", value: answer },
-          { key: "user_id", value: user.id },
-          { key: "deck_id", value: deckId },
-          { key: "status", value: "new" },
+        await flashcardModel.insert({
+          fields: [
+            { key: "id", value: UuidGeneratorAdapter.generate() },
+            { key: "question", value: validated.question },
+            { key: "answer", value: validated.answer },
+            { key: "user_id", value: user.id },
+            { key: "deck_id", value: deckId },
+            { key: "status", value: "new" },
           { key: "review_count", value: 0 },
           { key: "last_review_date", value: null },
           { key: "difficulty", value: difficulty },
@@ -276,13 +296,25 @@ export class DecksController extends BaseController {
         return;
       }
 
+      const schema = z.object({
+        question: z.string().trim().min(1, "A pergunta não pode ficar vazia.").optional(),
+        answer: z.string().trim().min(1, "A resposta não pode ficar vazia.").optional(),
+        difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+        tags: z.union([z.array(z.string()), z.string()]).optional(),
+        nextReviewDate: z
+          .coerce.date({ invalid_type_error: "Informe uma data de revisão válida." })
+          .optional(),
+      });
+
+      const validated = this.validateSchema(schema, req.body, res);
+      if (!validated) {
+        return;
+      }
+
       const updates: InputField[] = [];
-      const question = req.body?.question?.toString()?.trim();
-      const answer = req.body?.answer?.toString()?.trim();
-      const nextReviewDate = req.body?.nextReviewDate?.toString();
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "question")) {
-        if (!question) {
+        if (!validated.question) {
           this.sendToastResponse(res, {
             status: 400,
             message: "A pergunta não pode ficar vazia.",
@@ -290,11 +322,11 @@ export class DecksController extends BaseController {
           });
           return;
         }
-        updates.push({ key: "question", value: question });
+        updates.push({ key: "question", value: validated.question });
       }
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "answer")) {
-        if (!answer) {
+        if (!validated.answer) {
           this.sendToastResponse(res, {
             status: 400,
             message: "A resposta não pode ficar vazia.",
@@ -302,20 +334,19 @@ export class DecksController extends BaseController {
           });
           return;
         }
-        updates.push({ key: "answer", value: answer });
+        updates.push({ key: "answer", value: validated.answer });
       }
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "difficulty")) {
-        updates.push({ key: "difficulty", value: this.normalizeDifficulty(req.body?.difficulty) });
+        updates.push({ key: "difficulty", value: this.normalizeDifficulty(validated.difficulty) });
       }
 
       if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "tags")) {
-        updates.push({ key: "tags", value: this.parseTags(req.body?.tags) });
+        updates.push({ key: "tags", value: this.parseTags(validated.tags) });
       }
 
-      if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "nextReviewDate")) {
-        const parsedDate = nextReviewDate ? new Date(nextReviewDate) : new Date();
-        updates.push({ key: "next_review_date", value: parsedDate.toISOString() });
+      if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "nextReviewDate") && validated.nextReviewDate) {
+        updates.push({ key: "next_review_date", value: validated.nextReviewDate.toISOString() });
       }
 
       if (updates.length === 0) {
@@ -433,24 +464,22 @@ export class DecksController extends BaseController {
     }
 
     const { deckId } = req.params;
-    const content = req.body?.content?.toString()?.trim();
-    const goal = req.body?.goal?.toString()?.trim();
-    const tone = this.normalizeTone(req.body?.tone);
+    const schema = z.object({
+      content: z
+        .string()
+        .trim()
+        .min(1, "Cole algum conteúdo para que possamos gerar sugestões.")
+        .max(10000, "Use no máximo 10000 caracteres para gerar sugestões."),
+      goal: z.string().trim().optional().transform((value) => (value && value.length > 0 ? value : undefined)),
+      tone: z.enum(["concise", "standard", "deep"]).optional(),
+    });
 
-    if (!content) {
-      res
-        .status(400)
-        .setHeader("Content-Type", "text/html; charset=utf-8")
-        .send('<div class="alert alert-danger" role="alert">Cole algum conteúdo para que possamos gerar sugestões.</div>');
+    const validated = this.validateSchema(schema, req.body, res);
+    if (!validated) {
       return;
     }
-    if (content.length > 10000) {
-      res
-        .status(400)
-        .setHeader("Content-Type", "text/html; charset=utf-8")
-        .send('<div class="alert alert-danger" role="alert">Use no máximo 10000 caracteres para gerar sugestões.</div>');
-      return;
-    }
+
+    const tone = this.normalizeTone(validated.tone);
 
     try {
       const deck = await this.ensureDeckBelongsToUser(deckId, user.id);
@@ -465,8 +494,8 @@ export class DecksController extends BaseController {
       const cards = await this.generateCardsWithFallback({
         deckName: deck.name,
         deckSubject: deck.subject ?? "Geral",
-        content,
-        goal,
+        content: validated.content,
+        goal: validated.goal,
         tone,
       });
 
