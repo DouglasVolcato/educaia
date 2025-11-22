@@ -7,7 +7,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "tsx watch src/main/index.ts",
+    "dev": "cp ../.env .env && tsx watch src/main/index.ts",
     "start": "node dist/main/index.js",
     "build": "tsc",
     "test": "jest --passWithNoTests --runInBand --forceExit -c jest.config.js",
