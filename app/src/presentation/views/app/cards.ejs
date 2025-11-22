@@ -155,10 +155,7 @@
                         class="btn btn-outline-secondary btn-sm"
                         type="button"
                         data-bs-toggle="modal"
-                        data-bs-target="#editCardModal"
-                        data-card-id="<%= card.id %>"
-                        data-card-question="<%= card.question.replace(/\"/g, '&quot;').replace(/\n/g, '&#10;') %>"
-                        data-card-answer="<%= card.answer.replace(/\"/g, '&quot;').replace(/\n/g, '&#10;') %>"
+                        data-bs-target="#editCardModal-<%= card.id %>"
                       >
                         <i class="bi bi-pencil me-1"></i> Editar
                       </button>
@@ -166,9 +163,7 @@
                         class="btn btn-outline-danger btn-sm"
                         type="button"
                         data-bs-toggle="modal"
-                        data-bs-target="#deleteCardModal"
-                        data-card-id="<%= card.id %>"
-                        data-card-question="<%= card.question.replace(/\"/g, '&quot;') %>"
+                        data-bs-target="#deleteCardModal-<%= card.id %>"
                       >
                         <i class="bi bi-trash me-1"></i> Remover
                       </button>
@@ -193,6 +188,76 @@
                     </div>
                   </div>
                 </article>
+
+                <div class="modal fade" id="editCardModal-<%= card.id %>" tabindex="-1" aria-labelledby="editCardLabel-<%= card.id %>" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <form
+                      class="modal-content border-0 shadow"
+                      hx-put="/api/decks/<%= deck.id %>/cards/<%= card.id %>"
+                      hx-target="#global-alert-container"
+                      hx-swap="beforeend"
+                      hx-on::after-request="if(event.detail.xhr.status === 200) location.reload()"
+                    >
+                      <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="editCardLabel-<%= card.id %>">Editar carta</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body d-grid gap-3">
+                        <div>
+                          <label class="form-label fw-semibold" for="questionEdit-<%= card.id %>">Pergunta</label>
+                          <textarea class="form-control" id="questionEdit-<%= card.id %>" name="question" rows="3" required><%= card.question %></textarea>
+                        </div>
+                        <div>
+                          <label class="form-label fw-semibold" for="answerEdit-<%= card.id %>">Resposta</label>
+                          <textarea class="form-control" id="answerEdit-<%= card.id %>" name="answer" rows="4" required><%= card.answer %></textarea>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" data-loading-button>
+                          <span data-loading-label>Salvar alterações</span>
+                          <span class="d-none" data-loading-spinner>
+                            <span class="spinner-border spinner-border-sm align-middle" role="status" aria-hidden="true"></span>
+                            <span class="ms-2">Atualizando...</span>
+                          </span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <div class="modal fade" id="deleteCardModal-<%= card.id %>" tabindex="-1" aria-labelledby="deleteCardLabel-<%= card.id %>" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <form
+                      class="modal-content border-0 shadow"
+                      hx-delete="/api/decks/<%= deck.id %>/cards/<%= card.id %>"
+                      hx-target="#global-alert-container"
+                      hx-swap="beforeend"
+                      hx-on::after-request="if(event.detail.xhr.status === 200) location.reload()"
+                    >
+                      <div class="modal-header">
+                        <div>
+                          <p class="text-secondary text-uppercase small mb-1">Confirmação</p>
+                          <h1 class="modal-title fs-5" id="deleteCardLabel-<%= card.id %>">Remover carta</h1>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p class="mb-0">Deseja remover a carta "<%= card.question %>"? Essa ação não pode ser desfeita.</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger" data-loading-button>
+                          <span data-loading-label>Remover carta</span>
+                          <span class="d-none" data-loading-spinner>
+                            <span class="spinner-border spinner-border-sm align-middle" role="status" aria-hidden="true"></span>
+                            <span class="ms-2">Removendo...</span>
+                          </span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
               <% }) %>
             </div>
           </section>
@@ -258,68 +323,6 @@
       </div>
     </div>
 
-    <div class="modal fade" id="editCardModal" tabindex="-1" aria-labelledby="editCardLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="editCardLabel">Editar carta</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <form class="d-grid gap-3" data-edit-card-form hx-target="#global-alert-container" hx-swap="beforeend">
-              <div>
-                <label class="form-label fw-semibold" for="questionEdit">Pergunta</label>
-                <textarea class="form-control" id="questionEdit" name="question" rows="3"></textarea>
-              </div>
-              <div>
-                <label class="form-label fw-semibold" for="answerEdit">Resposta</label>
-                <textarea class="form-control" id="answerEdit" name="answer" rows="4"></textarea>
-              </div>
-              <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary" data-loading-button>
-                  <span data-loading-label>Salvar alterações</span>
-                  <span class="d-none" data-loading-spinner>
-                    <span class="spinner-border spinner-border-sm align-middle" role="status" aria-hidden="true"></span>
-                    <span class="ms-2">Atualizando...</span>
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal fade" id="deleteCardModal" tabindex="-1" aria-labelledby="deleteCardLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header">
-            <div>
-              <p class="text-secondary text-uppercase small mb-1">Confirmação</p>
-              <h1 class="modal-title fs-5" id="deleteCardLabel">Remover carta</h1>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <p class="mb-0" id="deleteCardMessage">Tem certeza que deseja remover esta carta? Essa ação não pode ser desfeita.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              data-delete-card-confirm
-              hx-target="#global-alert-container"
-              hx-swap="beforeend"
-            >
-              Remover carta
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="offcanvas offcanvas-end" tabindex="-1" id="deckSettings" aria-labelledby="deckSettingsLabel">
       <div class="offcanvas-header">
         <h5 id="deckSettingsLabel">Configurações do baralho</h5>
@@ -364,74 +367,4 @@
     </div>
 
     <%- include('../partials/feedback') %>
-    <script>
-      (() => {
-        const editModal = document.getElementById('editCardModal');
-        const editForm = editModal?.querySelector('[data-edit-card-form]');
-        const editQuestion = document.getElementById('questionEdit');
-        const editAnswer = document.getElementById('answerEdit');
-
-        editModal?.addEventListener('show.bs.modal', (event) => {
-          const trigger = event.relatedTarget;
-          const cardId = trigger?.getAttribute('data-card-id') ?? '';
-          const question = trigger?.getAttribute('data-card-question') ?? '';
-          const answer = trigger?.getAttribute('data-card-answer') ?? '';
-
-          editForm?.setAttribute('hx-put', `/api/decks/<%= deck.id %>/cards/${cardId}`);
-          if (editForm) {
-            htmx.process(editForm);
-          }
-          if (editForm) {
-            editForm.dataset.cardId = cardId;
-          }
-          if (editQuestion) {
-            editQuestion.value = question;
-          }
-          if (editAnswer) {
-            editAnswer.value = answer;
-          }
-        });
-
-        editForm?.addEventListener('htmx:afterRequest', (event) => {
-          // @ts-ignore
-          if (event.detail?.xhr?.status === 200) {
-            const cardId = editForm.dataset.cardId;
-            window.bootstrap?.Modal.getInstance(editModal)?.hide();
-            if (cardId) {
-              window.location.hash = `card-${cardId}`;
-            }
-            window.location.reload();
-          }
-        });
-
-        const deleteModal = document.getElementById('deleteCardModal');
-        const deleteMessage = document.getElementById('deleteCardMessage');
-        const deleteConfirm = deleteModal?.querySelector('[data-delete-card-confirm]');
-
-        deleteModal?.addEventListener('show.bs.modal', (event) => {
-          const trigger = event.relatedTarget;
-          const cardId = trigger?.getAttribute('data-card-id') ?? '';
-          const question = trigger?.getAttribute('data-card-question') ?? '';
-
-          deleteConfirm?.setAttribute('hx-delete', `/api/decks/<%= deck.id %>/cards/${cardId}`);
-          if (deleteConfirm) {
-            deleteConfirm.dataset.cardId = cardId;
-            htmx.process(deleteConfirm);
-          }
-          if (deleteMessage) {
-            deleteMessage.textContent = question
-              ? `Deseja remover a carta "${question}"? Essa ação não pode ser desfeita.`
-              : 'Tem certeza que deseja remover esta carta? Essa ação não pode ser desfeita.';
-          }
-        });
-
-        deleteConfirm?.addEventListener('htmx:afterRequest', (event) => {
-          // @ts-ignore
-          if (event.detail?.xhr?.status === 200) {
-            window.bootstrap?.Modal.getInstance(deleteModal)?.hide();
-            window.location.reload();
-          }
-        });
-      })();
-    </script>
   <%- include('../partials/scripts') %>

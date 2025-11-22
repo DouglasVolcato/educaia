@@ -128,18 +128,16 @@
                           class="btn btn-outline-danger"
                           type="button"
                           data-bs-toggle="modal"
-                          data-bs-target="#deleteDeckModal"
-                          data-deck-id="<%= deck.id %>"
-                          data-deck-name="<%= deck.name.replace(/\"/g, '&quot;') %>"
+                          data-bs-target="#deleteDeckModal-<%= deck.id %>"
                         >
                           <i class="bi bi-trash me-2"></i> Apagar baralho
                         </button>
                       </div>
-                      <div class="d-flex justify-content-between align-items-center border-top pt-3">
-                        <div class="d-flex align-items-center gap-3 text-secondary small">
-                          <span><i class="bi bi-lightning-charge-fill text-warning me-1"></i> <%= deck.newCards %> novos</span>
-                          <span><i class="bi bi-clock-history text-primary me-1"></i> Última revisão <%= deck.cards && deck.cards.length ? deck.cards[0].lastReviewedAt : '' %></span>
-                        </div>
+                  <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                    <div class="d-flex align-items-center gap-3 text-secondary small">
+                      <span><i class="bi bi-lightning-charge-fill text-warning me-1"></i> <%= deck.newCards %> novos</span>
+                      <span><i class="bi bi-clock-history text-primary me-1"></i> Última revisão <%= deck.cards && deck.cards.length ? deck.cards[0].lastReviewedAt : '' %></span>
+                    </div>
                         <button
                           class="btn btn-outline-secondary btn-sm"
                           type="button"
@@ -157,53 +155,55 @@
                               class="dropdown-item text-danger"
                               href="#"
                               data-bs-toggle="modal"
-                              data-bs-target="#deleteDeckModal"
-                              data-deck-id="<%= deck.id %>"
-                              data-deck-name="<%= deck.name.replace(/\"/g, '&quot;') %>"
+                              data-bs-target="#deleteDeckModal-<%= deck.id %>"
                             >
-                              Excluir
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </article>
+                        Excluir
+                      </a>
+                    </li>
+                  </ul>
                 </div>
-              <% }) %>
+              </div>
+            </article>
+
+            <div class="modal fade" id="deleteDeckModal-<%= deck.id %>" tabindex="-1" aria-labelledby="deleteDeckLabel-<%= deck.id %>" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <form
+                  class="modal-content border-0 shadow"
+                  hx-delete="/api/decks/<%= deck.id %>"
+                  hx-target="#global-alert-container"
+                  hx-swap="beforeend"
+                  hx-on::after-request="if(event.detail.xhr.status === 200) location.reload()"
+                >
+                  <div class="modal-header">
+                    <div>
+                      <p class="text-secondary text-uppercase small mb-1">Confirmação</p>
+                      <h1 class="modal-title fs-5" id="deleteDeckLabel-<%= deck.id %>">Apagar baralho</h1>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p class="mb-0">Deseja remover o baralho "<%= deck.name %>" e todas as suas cartas?</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger" data-loading-button>
+                      <span data-loading-label>Remover baralho</span>
+                      <span class="d-none" data-loading-spinner>
+                        <span class="spinner-border spinner-border-sm align-middle" role="status" aria-hidden="true"></span>
+                        <span class="ms-2">Removendo...</span>
+                      </span>
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
+          </div>
+        <% }) %>
+      </div>
           </section>
         </div>
       </main>
       <%- include('../partials/footer') %>
-    </div>
-
-    <div class="modal fade" id="deleteDeckModal" tabindex="-1" aria-labelledby="deleteDeckLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header">
-            <div>
-              <p class="text-secondary text-uppercase small mb-1">Confirmação</p>
-              <h1 class="modal-title fs-5" id="deleteDeckLabel">Apagar baralho</h1>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <p class="mb-0" id="deleteDeckMessage">Deseja remover este baralho e todas as cartas associadas?</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              data-delete-deck-confirm
-              hx-target="#global-alert-container"
-              hx-swap="beforeend"
-            >
-              Remover baralho
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="modal fade" id="createDeckModal" tabindex="-1" aria-labelledby="createDeckModalLabel" aria-hidden="true">
@@ -269,35 +269,4 @@
     </div>
 
     <%- include('../partials/feedback') %>
-    <script>
-      (() => {
-        const deleteDeckModal = document.getElementById('deleteDeckModal');
-        const deleteDeckMessage = document.getElementById('deleteDeckMessage');
-        const deleteDeckConfirm = deleteDeckModal?.querySelector('[data-delete-deck-confirm]');
-
-        deleteDeckModal?.addEventListener('show.bs.modal', (event) => {
-          const trigger = event.relatedTarget;
-          const deckId = trigger?.getAttribute('data-deck-id') ?? '';
-          const deckName = trigger?.getAttribute('data-deck-name') ?? '';
-
-          deleteDeckConfirm?.setAttribute('hx-delete', `/api/decks/${deckId}`);
-          if (deleteDeckConfirm) {
-            htmx.process(deleteDeckConfirm);
-          }
-          if (deleteDeckMessage) {
-            deleteDeckMessage.textContent = deckName
-              ? `Deseja remover o baralho "${deckName}" e todas as suas cartas?`
-              : 'Deseja remover este baralho e todas as cartas associadas?';
-          }
-        });
-
-        deleteDeckConfirm?.addEventListener('htmx:afterRequest', (event) => {
-          // @ts-ignore
-          if (event.detail?.xhr?.status === 200) {
-            window.bootstrap?.Modal.getInstance(deleteDeckModal)?.hide();
-            window.location.reload();
-          }
-        });
-      })();
-    </script>
   <%- include('../partials/scripts') %>

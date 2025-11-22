@@ -1,18 +1,18 @@
+import { IntegrationController } from "./controllers/api/integration.controller.ts";
+import { AccountController } from "./controllers/api/account.controller.ts";
+import { ReviewController } from "./controllers/api/review.controller.ts";
+import { DecksController } from "./controllers/api/decks.controller.ts";
+import { AuthController } from "./controllers/api/auth.controller.ts";
+import { AppController } from "./controllers/app/app.controller.ts";
 import { DbConnection } from "../db/db-connection.ts";
 import { fileURLToPath } from "url";
 import "module-alias/register.js";
 import { inspect } from "util";
 import express from "express";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
-import helmet from "helmet";
-import { AuthController } from "./controllers/api/auth.controller.ts";
-import { DecksController } from "./controllers/api/decks.controller.ts";
-import { AccountController } from "./controllers/api/account.controller.ts";
-import { IntegrationController } from "./controllers/api/integration.controller.ts";
-import { ReviewController } from "./controllers/api/review.controller.ts";
-import { AppController } from "./controllers/app/app.controller.ts";
 
 const normalizeError = (error: unknown) =>
   error instanceof Error ? error : new Error(inspect(error, { depth: null }));
@@ -41,7 +41,7 @@ app.locals.staticVersion = "1";
 const ONE_MONTH_IN_MS = 1000 * 60 * 60 * 24 * 30;
 
 app.use(cors());
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -74,7 +74,7 @@ new ReviewController(app);
 new AppController(app);
 
 const bootstrap = async () => {
-  try {    
+  try {
     await DbConnection.connect();
     app.listen(port, () => {
       console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
