@@ -14,6 +14,17 @@
                   Crie baralhos personalizados, gere flashcards com IA e acompanhe sua evolução dia após dia.
                 </p>
               </div>
+              <% if (googleClientId) { %>
+                <div class="d-grid gap-2 mb-3" id="google-signin-wrapper">
+                  <div id="google-signin-button"></div>
+                  <p class="text-secondary small mb-0">Usaremos apenas seu nome e e-mail.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2 text-secondary text-uppercase small mb-3">
+                  <div class="flex-grow-1 border-top"></div>
+                  <span>ou</span>
+                  <div class="flex-grow-1 border-top"></div>
+                </div>
+              <% } %>
               <form
                 class="d-grid gap-3"
                 hx-post="/api/auth/register"
@@ -130,4 +141,84 @@
       <%- include('../partials/footer') %>
     </div>
     <%- include('../partials/feedback') %>
+    <% if (googleClientId) { %>
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
+      <script>
+        (() => {
+          const clientId = "<%= googleClientId %>";
+          if (!clientId || typeof window === "undefined") return;
+
+          const renderButton = () => {
+            if (!window.google?.accounts?.id) {
+              window.setTimeout(renderButton, 150);
+              return;
+            }
+
+            window.google.accounts.id.initialize({
+              client_id: clientId,
+              callback: handleGoogleCredentialResponse,
+            });
+
+            const target = document.getElementById("google-signin-button");
+            const wrapper = document.getElementById("google-signin-wrapper");
+            if (target) {
+              const availableWidth =
+                wrapper?.getBoundingClientRect().width || target.parentElement?.clientWidth || 320;
+              const width = Math.max(240, Math.min(availableWidth, 400));
+
+              target.innerHTML = "";
+              window.google.accounts.id.renderButton(target, {
+                type: "standard",
+                theme: "outline",
+                size: "large",
+                text: "continue_with",
+                width,
+              });
+            }
+          };
+
+          const showToast = (markup) => {
+            const container = document.querySelector("#global-alert-container");
+            if (container && markup) {
+              container.insertAdjacentHTML("beforeend", markup);
+            }
+          };
+
+          window.handleGoogleCredentialResponse = async (response) => {
+            const container = document.querySelector("#global-alert-container");
+            if (container) {
+              container.innerHTML = "";
+            }
+
+            try {
+              const res = await fetch("/api/auth/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ credential: response?.credential }),
+              });
+
+              const markup = await res.text();
+              showToast(markup);
+
+              const redirect = res.headers.get("HX-Redirect");
+              if (res.ok && redirect) {
+                window.location.href = redirect;
+              }
+            } catch (error) {
+              showToast(
+                `<div class="toast show align-items-center text-bg-danger border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true"><div class="d-flex"><div class="toast-body">Não foi possível conectar com o Google. Tente novamente.</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button></div></div>`,
+              );
+            }
+          };
+
+          let resizeTimeout;
+          window.addEventListener("resize", () => {
+            window.clearTimeout(resizeTimeout);
+            resizeTimeout = window.setTimeout(renderButton, 150);
+          });
+
+          renderButton();
+        })();
+      </script>
+    <% } %>
   <%- include('../partials/scripts') %>
