@@ -1,5 +1,13 @@
 import { BaseController } from "../base.controller.js";
 import { flashcardModel } from "../../../db/models/flashcard.model.js";
+import { z } from "zod";
+const gradeCardSchema = z.object({
+    cardId: z.string().trim().min(1, "Informe a carta que deseja avaliar."),
+    difficulty: z
+        .string()
+        .optional()
+        .transform((value) => (value === "easy" || value === "hard" || value === "medium" ? value : "medium")),
+});
 export class ReviewController extends BaseController {
     constructor(app) {
         super(app);
@@ -8,16 +16,14 @@ export class ReviewController extends BaseController {
             if (!user) {
                 return;
             }
-            const cardId = req.body?.cardId?.toString();
-            const difficulty = this.normalizeDifficulty(req.body?.difficulty);
-            if (!cardId) {
-                this.sendToastResponse(res, {
-                    status: 400,
-                    message: "Informe a carta que deseja avaliar.",
-                    variant: "danger",
-                });
+            const parsed = gradeCardSchema.safeParse(req.body ?? {});
+            if (!parsed.success) {
+                const message = parsed.error.errors[0]?.message ?? "Dados inválidos.";
+                this.sendToastResponse(res, { status: 400, message, variant: "danger" });
                 return;
             }
+            const cardId = parsed.data.cardId;
+            const difficulty = this.normalizeDifficulty(parsed.data.difficulty);
             try {
                 const card = (await flashcardModel.findOne({
                     params: [
