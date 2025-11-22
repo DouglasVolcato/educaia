@@ -1,9 +1,9 @@
-import { IntegrationController } from "./controllers/api/integration.controller.ts";
-import { AccountController } from "./controllers/api/account.controller.ts";
-import { ReviewController } from "./controllers/api/review.controller.ts";
-import { DecksController } from "./controllers/api/decks.controller.ts";
-import { AuthController } from "./controllers/api/auth.controller.ts";
-import { AppController } from "./controllers/app/app.controller.ts";
+import { IntegrationController } from "../controllers/api/integration-controller.ts";
+import { AccountController } from "../controllers/api/account-controller.ts";
+import { ReviewController } from "../controllers/api/review-controller.ts";
+import { DecksController } from "../controllers/api/decks-controller.ts";
+import { AuthController } from "../controllers/api/auth-controller.ts";
+import { AppController } from "../controllers/app/app-controller.ts";
 import { DbConnection } from "../db/db-connection.ts";
 import { fileURLToPath } from "url";
 import "module-alias/register.js";

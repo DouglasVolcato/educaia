@@ -1,12 +1,7 @@
 import { Application, Request, Response } from "express";
-import { BaseController } from "../base.controller.ts";
-import { integrationModel } from "../../../db/models/integration.model.ts";
 import { z } from "zod";
-
-const updateIntegrationSchema = z.object({
-  connected: z.union([z.boolean(), z.string()]).optional(),
-  name: z.string().trim().optional(),
-});
+import { integrationModel } from "../../db/models/integration.model.ts";
+import { BaseController } from "../base-controller.ts";
 
 export class IntegrationController extends BaseController {
   constructor(app: Application) {
@@ -26,6 +21,11 @@ export class IntegrationController extends BaseController {
     const { integrationId } = req.params;
 
     try {
+      const updateIntegrationSchema = z.object({
+        connected: z.union([z.boolean(), z.string()]).optional(),
+        name: z.string().trim().optional(),
+      });
+
       const parsed = updateIntegrationSchema.safeParse(req.body ?? {});
 
       if (!parsed.success) {

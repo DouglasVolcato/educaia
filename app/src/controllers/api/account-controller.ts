@@ -1,15 +1,9 @@
-import { userModel } from "../../../db/models/user.model.ts";
 import { Application, Request, Response } from "express";
-import { BaseController } from "../base.controller.ts";
-import { InputField } from "../../../db/repository.ts";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-
-const accountUpdateSchema = z.object({
-  name: z.string().trim().min(1, "Informe um nome válido.").optional(),
-  email: z.string().trim().email("Informe um e-mail válido.").optional(),
-  password: z.string().trim().min(6, "A senha deve ter ao menos 6 caracteres.").optional(),
-});
+import { userModel } from "../../db/models/user.model.ts";
+import { InputField } from "../../db/repository.ts";
+import { BaseController } from "../base-controller.ts";
 
 export class AccountController extends BaseController {
   constructor(app: Application) {
@@ -26,6 +20,12 @@ export class AccountController extends BaseController {
     if (!user) {
       return;
     }
+
+    const accountUpdateSchema = z.object({
+      name: z.string().trim().min(1, "Informe um nome válido.").optional(),
+      email: z.string().trim().email("Informe um e-mail válido.").optional(),
+      password: z.string().trim().min(6, "A senha deve ter ao menos 6 caracteres.").optional(),
+    });
 
     const parsed = accountUpdateSchema.safeParse(req.body ?? {});
 

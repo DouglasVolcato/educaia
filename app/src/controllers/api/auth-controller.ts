@@ -1,38 +1,11 @@
 import { Application, Request, Response } from "express";
 import axios from "axios";
 import bcrypt from "bcryptjs";
-import { BaseController } from "../base.controller.ts";
-import { usersModel } from "../../../db/models/users-model.ts";
-import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
-import { authRateLimiter } from "../rate-limiters.ts";
 import { z } from "zod";
-
-const registerSchema = z
-  .object({
-    firstName: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
-    lastName: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
-    email: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
-    password: z.string().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
-    confirmPassword: z.string().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
-  })
-  .superRefine((data, ctx) => {
-    if (data.password !== data.confirmPassword) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["confirmPassword"],
-        message: "As senhas informadas não conferem.",
-      });
-    }
-  });
-
-const loginSchema = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail e senha para continuar."),
-  password: z.string().min(1, "Informe seu e-mail e senha para continuar."),
-});
-
-const googleLoginSchema = z.object({
-  credential: z.string().trim().min(1, "Token do Google inválido ou ausente."),
-});
+import { UuidGeneratorAdapter } from "../../adapters/uuid-generator-adapter.ts";
+import { usersModel } from "../../db/models/users-model.ts";
+import { BaseController } from "../base-controller.ts";
+import { authRateLimiter } from "../rate-limiters.ts";
 
 export class AuthController extends BaseController {
   constructor(app: Application) {
@@ -80,6 +53,24 @@ export class AuthController extends BaseController {
   }
 
   private handleRegister = async (req: Request, res: Response) => {
+    const registerSchema = z
+      .object({
+        firstName: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+        lastName: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+        email: z.string().trim().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+        password: z.string().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+        confirmPassword: z.string().min(1, "Preencha todos os campos obrigatórios para criar sua conta."),
+      })
+      .superRefine((data, ctx) => {
+        if (data.password !== data.confirmPassword) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["confirmPassword"],
+            message: "As senhas informadas não conferem.",
+          });
+        }
+      });
+
     const parsed = registerSchema.safeParse(req.body ?? {});
 
     if (!parsed.success) {
@@ -134,6 +125,11 @@ export class AuthController extends BaseController {
   };
 
   private handleLogin = async (req: Request, res: Response) => {
+    const loginSchema = z.object({
+      email: z.string().trim().min(1, "Informe seu e-mail e senha para continuar."),
+      password: z.string().min(1, "Informe seu e-mail e senha para continuar."),
+    });
+
     const parsed = loginSchema.safeParse(req.body ?? {});
 
     if (!parsed.success) {
@@ -186,6 +182,10 @@ export class AuthController extends BaseController {
   };
 
   private handleGoogleLogin = async (req: Request, res: Response) => {
+    const googleLoginSchema = z.object({
+      credential: z.string().trim().min(1, "Token do Google inválido ou ausente."),
+    });
+
     const parsed = googleLoginSchema.safeParse(req.body ?? {});
     const clientId = process.env.GOOGLE_CLIENT_ID;
 

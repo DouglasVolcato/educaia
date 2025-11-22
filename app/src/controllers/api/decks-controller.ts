@@ -1,57 +1,12 @@
 import { Application, Request, Response } from "express";
-import { BaseController } from "../base.controller.ts";
-import { deckModel } from "../../../db/models/deck.model.ts";
-import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model.ts";
-import { InputField } from "../../../db/repository.ts";
-import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
-import { DeckCardGeneratorService } from "../../../ai/deck-card-generator.service.ts";
-import { deckGenerateRateLimiter } from "../rate-limiters.ts";
 import { z } from "zod";
-
-const deckBaseSchema = z.object({
-  name: z.string().trim(),
-  description: z.string().trim().optional(),
-  subject: z.string().trim(),
-  tags: z.union([z.array(z.string()), z.string()]).optional(),
-});
-
-const createDeckSchema = deckBaseSchema
-  .pick({ name: true, description: true, subject: true, tags: true })
-  .extend({
-    name: deckBaseSchema.shape.name.min(1, "Informe ao menos o nome e o assunto do baralho."),
-    subject: deckBaseSchema.shape.subject.min(1, "Informe ao menos o nome e o assunto do baralho."),
-  });
-
-const updateDeckSchema = deckBaseSchema.partial().extend({
-  name: deckBaseSchema.shape.name
-    .min(1, "O nome do baralho não pode ficar em branco.")
-    .optional(),
-});
-
-const createCardSchema = z.object({
-  question: z.string().trim().min(1, "Informe pergunta e resposta para criar uma carta."),
-  answer: z.string().trim().min(1, "Informe pergunta e resposta para criar uma carta."),
-  difficulty: z.string().optional(),
-  tags: z.union([z.array(z.string()), z.string()]).optional(),
-});
-
-const updateCardSchema = z.object({
-  question: z.string().trim().min(1, "A pergunta não pode ficar vazia.").optional(),
-  answer: z.string().trim().min(1, "A resposta não pode ficar vazia.").optional(),
-  difficulty: z.string().optional(),
-  tags: z.union([z.array(z.string()), z.string()]).optional(),
-  nextReviewDate: z.string().optional(),
-});
-
-const generateCardsSchema = z.object({
-  content: z
-    .string()
-    .trim()
-    .min(1, "Cole algum conteúdo para que possamos gerar sugestões.")
-    .max(10000, "Use no máximo 10000 caracteres para gerar sugestões."),
-  goal: z.string().trim().optional(),
-  tone: z.enum(["concise", "standard", "deep"]).optional(),
-});
+import { DeckCardGeneratorService } from "../../ai/deck-card-generator.service.ts";
+import { UuidGeneratorAdapter } from "../../adapters/uuid-generator-adapter.ts";
+import { deckModel } from "../../db/models/deck.model.ts";
+import { flashcardModel, FlashcardRow } from "../../db/models/flashcard.model.ts";
+import { InputField } from "../../db/repository.ts";
+import { BaseController } from "../base-controller.ts";
+import { deckGenerateRateLimiter } from "../rate-limiters.ts";
 
 export class DecksController extends BaseController {
   private readonly cardGenerator: DeckCardGeneratorService;
@@ -72,7 +27,16 @@ export class DecksController extends BaseController {
     this.router.post("/decks/:deckId/generate", deckGenerateRateLimiter, this.handleGenerateCards);
   }
 
-  private buildDeckParams(data: z.infer<typeof deckBaseSchema>) {
+  private createDeckBaseSchema() {
+    return z.object({
+      name: z.string().trim(),
+      description: z.string().trim().optional(),
+      subject: z.string().trim(),
+      tags: z.union([z.array(z.string()), z.string()]).optional(),
+    });
+  }
+
+  private buildDeckParams(data: z.infer<ReturnType<DecksController["createDeckBaseSchema"]>>) {
     return {
       name: data.name,
       description: data.description?.length ? data.description : null,
@@ -95,6 +59,14 @@ export class DecksController extends BaseController {
     if (!user) {
       return;
     }
+
+    const deckBaseSchema = this.createDeckBaseSchema();
+    const createDeckSchema = deckBaseSchema
+      .pick({ name: true, description: true, subject: true, tags: true })
+      .extend({
+        name: deckBaseSchema.shape.name.min(1, "Informe ao menos o nome e o assunto do baralho."),
+        subject: deckBaseSchema.shape.subject.min(1, "Informe ao menos o nome e o assunto do baralho."),
+      });
 
     const parsed = createDeckSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
@@ -145,6 +117,13 @@ export class DecksController extends BaseController {
         });
         return;
       }
+
+      const deckBaseSchema = this.createDeckBaseSchema();
+      const updateDeckSchema = deckBaseSchema.partial().extend({
+        name: deckBaseSchema.shape.name
+          .min(1, "O nome do baralho não pode ficar em branco.")
+          .optional(),
+      });
 
       const parsed = updateDeckSchema.safeParse(req.body ?? {});
 
@@ -251,6 +230,13 @@ export class DecksController extends BaseController {
     }
 
     const { deckId } = req.params;
+    const createCardSchema = z.object({
+      question: z.string().trim().min(1, "Informe pergunta e resposta para criar uma carta."),
+      answer: z.string().trim().min(1, "Informe pergunta e resposta para criar uma carta."),
+      difficulty: z.string().optional(),
+      tags: z.union([z.array(z.string()), z.string()]).optional(),
+    });
+
     const parsed = createCardSchema.safeParse(req.body ?? {});
 
     if (!parsed.success) {
@@ -325,6 +311,14 @@ export class DecksController extends BaseController {
         });
         return;
       }
+
+      const updateCardSchema = z.object({
+        question: z.string().trim().min(1, "A pergunta não pode ficar vazia.").optional(),
+        answer: z.string().trim().min(1, "A resposta não pode ficar vazia.").optional(),
+        difficulty: z.string().optional(),
+        tags: z.union([z.array(z.string()), z.string()]).optional(),
+        nextReviewDate: z.string().optional(),
+      });
 
       const parsed = updateCardSchema.safeParse(req.body ?? {});
 
@@ -478,6 +472,16 @@ export class DecksController extends BaseController {
     }
 
     const { deckId } = req.params;
+    const generateCardsSchema = z.object({
+      content: z
+        .string()
+        .trim()
+        .min(1, "Cole algum conteúdo para que possamos gerar sugestões.")
+        .max(10000, "Use no máximo 10000 caracteres para gerar sugestões."),
+      goal: z.string().trim().optional(),
+      tone: z.enum(["concise", "standard", "deep"]).optional(),
+    });
+
     const parsed = generateCardsSchema.safeParse(req.body ?? {});
 
     if (!parsed.success) {
