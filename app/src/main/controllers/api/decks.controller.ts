@@ -5,6 +5,7 @@ import { flashcardModel, FlashcardRow } from "../../../db/models/flashcard.model
 import { InputField } from "../../../db/repository.ts";
 import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
 import { DeckCardGeneratorService } from "../../../ai/deck-card-generator.service.ts";
+import { deckGenerateRateLimiter } from "../rate-limiters.ts";
 
 export class DecksController extends BaseController {
   private readonly cardGenerator: DeckCardGeneratorService;
@@ -22,7 +23,7 @@ export class DecksController extends BaseController {
     this.router.put("/decks/:deckId/cards/:cardId", this.handleUpdateCard);
     this.router.delete("/decks/:deckId/cards/:cardId", this.handleDeleteCard);
     this.router.post("/decks/:deckId/cards/:cardId/move-to-review", this.handleMoveCardToReview);
-    this.router.post("/decks/:deckId/generate", this.handleGenerateCards);
+    this.router.post("/decks/:deckId/generate", deckGenerateRateLimiter, this.handleGenerateCards);
   }
 
   private buildDeckParams(req: Request) {

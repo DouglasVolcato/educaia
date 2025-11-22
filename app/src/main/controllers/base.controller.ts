@@ -1,11 +1,13 @@
-import { Application, Request, Response, Router } from "express";
+import { Application, Request, RequestHandler, Response, Router } from "express";
 import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.ts";
 import { SESSION_COOKIE_NAME } from "../../constants/session.ts";
 import { authMiddleware } from "../../controllers/middlewares/authMiddleware.ts";
+import { defaultRateLimiter } from "./rate-limiters.ts";
 
 type ControllerOptions = {
   basePath?: string;
   requiresAuth?: boolean;
+  rateLimiter?: RequestHandler;
 };
 
 type ToastVariant = "success" | "danger" | "info";
@@ -49,6 +51,9 @@ export abstract class BaseController {
   }
 
   private setupMiddlewares() {
+    const rateLimiter = this.options.rateLimiter ?? defaultRateLimiter;
+    this.router.use(rateLimiter);
+
     if (this.options.requiresAuth ?? true) {
       this.router.use(authMiddleware);
     }

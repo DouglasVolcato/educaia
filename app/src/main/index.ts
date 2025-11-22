@@ -6,6 +6,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
+import helmet from "helmet";
 import { AuthController } from "./controllers/api/auth.controller.ts";
 import { DecksController } from "./controllers/api/decks.controller.ts";
 import { AccountController } from "./controllers/api/account.controller.ts";
@@ -40,6 +41,7 @@ app.locals.staticVersion = "1";
 const ONE_MONTH_IN_MS = 1000 * 60 * 60 * 24 * 30;
 
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -69,7 +71,7 @@ new DecksController(app);
 new AccountController(app);
 new IntegrationController(app);
 new ReviewController(app);
-new AppController(app)
+new AppController(app);
 
 const bootstrap = async () => {
   try {    

@@ -4,10 +4,11 @@ import bcrypt from "bcryptjs";
 import { BaseController } from "../base.controller.ts";
 import { usersModel } from "../../../db/models/users-model.ts";
 import { UuidGeneratorAdapter } from "../../../adapters/uuid-generator-adapter.ts";
+import { authRateLimiter } from "../rate-limiters.ts";
 
 export class AuthController extends BaseController {
   constructor(app: Application) {
-    super(app, { requiresAuth: false });
+    super(app, { requiresAuth: false, rateLimiter: authRateLimiter });
   }
 
   protected registerRoutes(): void {
