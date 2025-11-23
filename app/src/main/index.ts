@@ -56,7 +56,7 @@ app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.set("views", path.join(rootDir, "src", "presentation", "views"));
 app.use(
-  "/static",
+  "/",
   express.static(path.join(rootDir, "src", "presentation", "public"), {
     maxAge: ONE_MONTH_IN_MS,
     immutable: true,
