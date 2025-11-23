@@ -3,9 +3,11 @@ import { DeckCardGeneratorService } from "../../ai/deck-card-generator-service.j
 import { flashcardModel } from "../../db/models/flashcard.model.js";
 import { UuidGeneratorAdapter } from "../../adapters/uuid-generator-adapter.js";
 import { deckGenerationQueue } from "../../queue/deck-generation-queue.js";
-import { deckGenerateRateLimiter } from "../rate-limiters.js";
 import { deckModel } from "../../db/models/deck.model.js";
+import { deckGenerateRateLimiter } from "../rate-limiters.js";
 import { BaseController } from "../base-controller.js";
+import { renderFile } from "ejs";
+import path from "path";
 import { z } from "zod";
 export class DecksController extends BaseController {
     constructor(app) {
@@ -188,9 +190,10 @@ export class DecksController extends BaseController {
                     });
                     return;
                 }
+                const cardId = UuidGeneratorAdapter.generate();
                 await flashcardModel.insert({
                     fields: [
-                        { key: "id", value: UuidGeneratorAdapter.generate() },
+                        { key: "id", value: cardId },
                         { key: "question", value: question },
                         { key: "answer", value: answer },
                         { key: "user_id", value: user.id },
@@ -202,11 +205,18 @@ export class DecksController extends BaseController {
                         { key: "tags", value: tags },
                     ],
                 });
-                this.sendToastResponse(res, {
-                    status: 201,
-                    message: "Carta criada com sucesso!",
-                    variant: "success",
-                });
+                const newCard = (await flashcardModel.findOne({
+                    params: [
+                        { key: "id", value: cardId },
+                        { key: "deck_id", value: deckId },
+                        { key: "user_id", value: user.id },
+                    ],
+                }));
+                const html = await this.renderCard({ card: newCard, deck: deck });
+                res
+                    .status(201)
+                    .setHeader("Content-Type", "text/html; charset=utf-8")
+                    .send(html);
             }
             catch (error) {
                 this.handleUnexpectedError("Failed to create card", error, res);
@@ -269,20 +279,24 @@ export class DecksController extends BaseController {
                     const parsedDate = parsed.data.nextReviewDate ? new Date(parsed.data.nextReviewDate) : new Date();
                     updates.push({ key: "next_review_date", value: parsedDate.toISOString() });
                 }
-                if (updates.length === 0) {
-                    this.sendToastResponse(res, {
-                        status: 200,
-                        message: "Nenhuma alteração foi aplicada nesta carta.",
-                        variant: "info",
-                    });
-                    return;
+                if (updates.length !== 0) {
+                    await flashcardModel.update({ id: cardId, fields: updates });
                 }
-                await flashcardModel.update({ id: cardId, fields: updates });
-                this.sendToastResponse(res, {
-                    status: 200,
-                    message: "Carta atualizada com sucesso!",
-                    variant: "success",
-                });
+                const newCard = (await flashcardModel.findOne({
+                    params: [
+                        { key: "id", value: cardId },
+                        { key: "deck_id", value: deckId },
+                        { key: "user_id", value: user.id },
+                    ],
+                }));
+                const deck = (await deckModel.findOne({
+                    params: [{ key: "id", value: deckId }],
+                }));
+                const html = await this.renderCard({ card: newCard, deck: deck });
+                res
+                    .status(200)
+                    .setHeader("Content-Type", "text/html; charset=utf-8")
+                    .send(html);
             }
             catch (error) {
                 this.handleUnexpectedError("Failed to update card", error, res);
@@ -477,6 +491,10 @@ export class DecksController extends BaseController {
                 { key: "user_id", value: userId },
             ],
         });
+    }
+    async renderCard(data) {
+        const viewPath = path.join(process.cwd(), "src", "presentation", "views", "app", "card.ejs");
+        return renderFile(viewPath, data, { async: true });
     }
     buildProcessingNoticeMarkup(deckId) {
         return `

@@ -137,9 +137,9 @@
             <form 
               class="d-grid gap-3" 
               hx-post="/api/decks/<%= deck.id %>/cards" 
-              hx-target="#global-alert-container" 
-              hx-swap="beforeend"
-              hx-on::after-request="if(event.detail.xhr.status === 201) location.reload()"
+              hx-target="#cardsList" 
+              hx-swap="beforebegin"
+              hx-on::after-request="if(event.detail.xhr.status === 201) document.getElementById('createCardModal').querySelector('.btn-close').click();"
             >
               <div>
                 <label class="form-label fw-semibold" for="question">Pergunta</label>

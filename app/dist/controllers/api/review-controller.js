@@ -1,8 +1,8 @@
 import { flashcardModel } from "../../db/models/flashcard.model.js";
 import { BaseController } from "../base-controller.js";
+import { renderFile } from "ejs";
 import { z } from "zod";
 import path from "path";
-import { renderFile } from "ejs";
 export class ReviewController extends BaseController {
     constructor(app) {
         super(app);
