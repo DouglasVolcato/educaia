@@ -1,25 +1,20 @@
 services:
-
-  postgres:
-    image: postgres:15
-    container_name: postgres
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
     restart: always
-    ports:
-      - ${DB_PORT}:5432
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./migrations/db.sql:/docker-entrypoint-initdb.d/db.sql
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     networks:
       - monitoring
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
   main:
     build:
       context: ./app
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     restart: always
     ports:
       - ${PORT}:${PORT}
@@ -36,10 +31,12 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      OPENAI_MODEL: ${OPENAI_MODEL}
       OPENAI_KEY: ${OPENAI_KEY}
-      GOOLE_CLIENT_ID: ${GOOLE_CLIENT_ID}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
     depends_on:
-      - postgres
+      - rabbitmq
     networks:
       - monitoring
     volumes:
@@ -62,4 +59,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
+  rabbitmq_data:

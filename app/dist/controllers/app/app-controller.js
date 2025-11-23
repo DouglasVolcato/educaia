@@ -1,8 +1,9 @@
-import { BaseController } from "../base-controller.js";
-import { authMiddleware } from "../middlewares/auth-middleware.js";
-import { DbConnection } from "../../db/db-connection.js";
-import { deckModel } from "../../db/models/deck.model.js";
+import { cardGenerationProcessModel } from "../../db/models/card-generation-process.model.js";
 import { flashcardModel } from "../../db/models/flashcard.model.js";
+import { authMiddleware } from "../middlewares/auth-middleware.js";
+import { deckModel } from "../../db/models/deck.model.js";
+import { DbConnection } from "../../db/db-connection.js";
+import { BaseController } from "../base-controller.js";
 export class AppController extends BaseController {
     constructor(app) {
         super(app, { basePath: "/app", requiresAuth: false });
@@ -56,6 +57,10 @@ export class AppController extends BaseController {
                     if (!deck) {
                         return { user, deck: null };
                     }
+                    const processes = await cardGenerationProcessModel.findActiveByDeck({
+                        deckId,
+                        userId: userRow.id,
+                    });
                     const cards = await flashcardModel.findByDeck({
                         deckId,
                         userId: userRow.id,
@@ -63,7 +68,7 @@ export class AppController extends BaseController {
                         difficulty,
                     });
                     const deckView = {
-                        ...this.mapDeckStatsToView(deck),
+                        ...this.mapDeckStatsToView(deck, processes.length),
                         cards: cards.map((card) => this.mapFlashcardToView(card)),
                     };
                     return { user, deck: deckView };
@@ -347,7 +352,7 @@ export class AppController extends BaseController {
         }
         return decks;
     }
-    mapDeckStatsToView(deck) {
+    mapDeckStatsToView(deck, activeProcesses = 0) {
         return {
             id: deck.id,
             name: deck.name,
@@ -359,6 +364,8 @@ export class AppController extends BaseController {
             newCards: Number(deck.new_cards ?? 0),
             progress: Number(deck.progress ?? 0),
             updatedAt: new Date(deck.updated_at).toISOString(),
+            activeProcesses,
+            hasActiveProcesses: activeProcesses > 0,
         };
     }
     mapFlashcardToView(card) {

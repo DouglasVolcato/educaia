@@ -26,7 +26,7 @@
                     hx-post="/api/decks/<%= deck.id %>/generate"
                     hx-target="#generationPreview"
                     hx-swap="innerHTML"
-                    hx-on::after-request="if(event.detail.xhr.status === 201) { document.getElementById('generation-form').classList.add('d-none'); }"
+                    hx-on::after-request="if(event.detail.xhr.status >= 200 && event.detail.xhr.status < 300) { document.getElementById('generation-form').classList.add('d-none'); }"
                   >
                     <div>
                       <label class="form-label fw-semibold" for="contentSource">Conteúdo de referência</label>
@@ -92,7 +92,7 @@
             <div class="card border-0 shadow-sm">
               <div class="card-body p-4 text-center text-secondary">
                 <i class="bi bi-magic fs-1 text-primary mb-3 d-block"></i>
-                <p class="mb-0">Os flashcards gerados aparecerão aqui para revisão antes de serem adicionados ao baralho.</p>
+                <p class="mb-0">Ao enviar o conteúdo, mostraremos aqui um aviso de processamento.</p>
               </div>
             </div>
           </section>

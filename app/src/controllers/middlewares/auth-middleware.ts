@@ -1,7 +1,7 @@
-import { NextFunction, Request, Response } from "express";
 import { TokenHandlerAdapter } from "../../adapters/token-handler-adapter.ts";
 import { SESSION_COOKIE_NAME } from "../../constants/session.ts";
 import { usersModel } from "../../db/models/users-model.ts";
+import { NextFunction, Request, Response } from "express";
 
 const PUBLIC_PATHS = new Set(["/login", "/register", "/", "/auth/login", "/auth/register"]);
 

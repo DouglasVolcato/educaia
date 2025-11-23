@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { LlmTool, LlmToolType } from "../tool.ts";
+import { z } from "zod";
 
 export type FlashcardSuggestion = {
   question: string;

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { TokenHandlerAdapter } from "../adapters/token-handler-adapter.js";
-import { SESSION_COOKIE_NAME } from "../constants/session.js";
 import { authMiddleware } from "./middlewares/auth-middleware.js";
+import { SESSION_COOKIE_NAME } from "../constants/session.js";
 import { defaultRateLimiter } from "./rate-limiters.js";
 export class BaseController {
     constructor(app, options = {}) {

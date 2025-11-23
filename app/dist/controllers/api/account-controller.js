@@ -1,7 +1,7 @@
-import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { userModel } from "../../db/models/user.model.js";
 import { BaseController } from "../base-controller.js";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
 export class AccountController extends BaseController {
     constructor(app) {
         super(app);

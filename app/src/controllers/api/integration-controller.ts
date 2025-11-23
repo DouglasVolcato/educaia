@@ -1,7 +1,7 @@
-import { Application, Request, Response } from "express";
-import { z } from "zod";
 import { integrationModel } from "../../db/models/integration.model.ts";
+import { Application, Request, Response } from "express";
 import { BaseController } from "../base-controller.ts";
+import { z } from "zod";
 
 export class IntegrationController extends BaseController {
   constructor(app: Application) {

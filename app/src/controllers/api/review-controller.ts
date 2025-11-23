@@ -1,8 +1,7 @@
-import { Application, Request, Response } from "express";
-import { z } from "zod";
 import { flashcardModel, FlashcardRow } from "../../db/models/flashcard.model.ts";
-import { userModel } from "../../db/models/user.model.ts";
+import { Application, Request, Response } from "express";
 import { BaseController } from "../base-controller.ts";
+import { z } from "zod";
 
 export class ReviewController extends BaseController {
   constructor(app: Application) {

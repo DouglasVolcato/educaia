@@ -1,12 +1,14 @@
-import { Application, Request, Response } from "express";
-import { z } from "zod";
-import { DeckCardGeneratorService } from "../../ai/deck-card-generator.service.ts";
-import { UuidGeneratorAdapter } from "../../adapters/uuid-generator-adapter.ts";
-import { deckModel } from "../../db/models/deck.model.ts";
+import { cardGenerationProcessModel } from "../../db/models/card-generation-process.model.ts";
+import { DeckCardGeneratorService } from "../../ai/deck-card-generator-service.ts";
 import { flashcardModel, FlashcardRow } from "../../db/models/flashcard.model.ts";
-import { InputField } from "../../db/repository.ts";
-import { BaseController } from "../base-controller.ts";
+import { UuidGeneratorAdapter } from "../../adapters/uuid-generator-adapter.ts";
+import { deckGenerationQueue } from "../../queue/deck-generation-queue.ts";
 import { deckGenerateRateLimiter } from "../rate-limiters.ts";
+import { deckModel } from "../../db/models/deck.model.ts";
+import { Application, Request, Response } from "express";
+import { BaseController } from "../base-controller.ts";
+import { InputField } from "../../db/repository.ts";
+import { z } from "zod";
 
 export class DecksController extends BaseController {
   private readonly cardGenerator: DeckCardGeneratorService;
@@ -493,6 +495,8 @@ export class DecksController extends BaseController {
       return;
     }
 
+    let processId: string | null = null;
+
     try {
       const deck = await this.ensureDeckBelongsToUser(deckId, user.id);
       if (!deck) {
@@ -507,57 +511,66 @@ export class DecksController extends BaseController {
       const goal = parsed.data.goal?.length ? parsed.data.goal : undefined;
       const tone = this.normalizeTone(parsed.data.tone);
 
-      const cards = await this.generateCardsWithFallback({
+      processId = UuidGeneratorAdapter.generate();
+
+      await cardGenerationProcessModel.insert({
+        fields: [
+          { key: "id", value: processId },
+          { key: "user_id", value: user.id },
+          { key: "deck_id", value: deckId },
+          { key: "status", value: "processing" },
+        ],
+      });
+
+      await deckGenerationQueue.enqueue({
+        processId,
+        deckId,
         deckName: deck.name,
         deckSubject: deck.subject ?? "Geral",
+        userId: user.id,
         content,
         goal,
         tone,
       });
 
-      for (const suggestion of cards) {
-        await flashcardModel.insert({
-          fields: [
-            { key: "id", value: UuidGeneratorAdapter.generate() },
-            { key: "question", value: suggestion.question },
-            { key: "answer", value: suggestion.answer },
-            { key: "user_id", value: user.id },
-            { key: "deck_id", value: deckId },
-            { key: "status", value: "new" },
-            { key: "review_count", value: 0 },
-            { key: "last_review_date", value: null },
-            { key: "difficulty", value: suggestion.difficulty ?? "medium" },
-            { key: "tags", value: suggestion.tags ?? [] },
-          ],
-        });
+      res
+        .status(202)
+        .setHeader("Content-Type", "text/html; charset=utf-8")
+        .send(this.buildProcessingNoticeMarkup(deck.id));
+    } catch (error) {
+      if (processId) {
+        try {
+          await cardGenerationProcessModel.deleteById(processId);
+        } catch (cleanupError) {
+          console.error("Failed to rollback card generation process", cleanupError);
+        }
       }
 
-      res
-        .status(201)
-        .setHeader("Content-Type", "text/html; charset=utf-8")
-        .send(this.buildCardPreviewMarkup(deck.id, cards));
-    } catch (error) {
-      console.error("Failed to generate AI suggestion", error);
+      console.error("Failed to enqueue AI suggestion", error);
       res
         .status(500)
         .setHeader("Content-Type", "text/html; charset=utf-8")
-        .send('<div class="alert alert-danger" role="alert">Não foi possível gerar sugestões no momento. Tente novamente mais tarde.</div>');
+        .send('<div class="alert alert-danger" role="alert">Não foi possível enviar para processamento. Tente novamente mais tarde.</div>');
     }
   };
 
-  private async generateCardsWithFallback(input: {
-    deckName: string;
-    deckSubject: string;
-    content: string;
-    goal?: string | null;
-    tone?: "concise" | "standard" | "deep";
-  }) {
-    const result = await this.cardGenerator.generateCards(input);
-    if (result.cards.length > 0) {
-      return result.cards;
-    } else {
-      throw new Error("Erro ao gerar flashcards.");
-    }
+  private buildProcessingNoticeMarkup(deckId: string) {
+    return `
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 d-flex flex-column flex-md-row align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-arrow-repeat text-primary fs-3"></i>
+            <div>
+              <p class="mb-1 fw-semibold">Estamos gerando novas cartas para este baralho.</p>
+              <p class="mb-0 text-secondary small">Você pode voltar para o baralho e continuar estudando enquanto processamos o conteúdo.</p>
+            </div>
+          </div>
+          <a class="btn btn-outline-primary ms-md-auto" href="/app/decks/${deckId}/cards">
+            Voltar para o baralho
+          </a>
+        </div>
+      </div>
+    `;
   }
 
   private normalizeTone(value: unknown): "concise" | "standard" | "deep" {

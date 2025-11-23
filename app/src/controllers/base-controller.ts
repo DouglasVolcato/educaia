@@ -1,7 +1,7 @@
 import { Application, Request, RequestHandler, Response, Router } from "express";
 import { TokenHandlerAdapter } from "../adapters/token-handler-adapter.ts";
-import { SESSION_COOKIE_NAME } from "../constants/session.ts";
 import { authMiddleware } from "./middlewares/auth-middleware.ts";
+import { SESSION_COOKIE_NAME } from "../constants/session.ts";
 import { defaultRateLimiter } from "./rate-limiters.ts";
 
 type ControllerOptions = {

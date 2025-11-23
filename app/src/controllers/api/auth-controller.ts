@@ -1,11 +1,11 @@
-import { Application, Request, Response } from "express";
-import axios from "axios";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { UuidGeneratorAdapter } from "../../adapters/uuid-generator-adapter.ts";
 import { usersModel } from "../../db/models/users-model.ts";
+import { Application, Request, Response } from "express";
 import { BaseController } from "../base-controller.ts";
 import { authRateLimiter } from "../rate-limiters.ts";
+import bcrypt from "bcryptjs";
+import axios from "axios";
+import { z } from "zod";
 
 export class AuthController extends BaseController {
   constructor(app: Application) {

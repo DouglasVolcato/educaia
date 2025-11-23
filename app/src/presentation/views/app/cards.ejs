@@ -11,6 +11,16 @@
             </ol>
           </nav>
 
+          <% if (deck.hasActiveProcesses) { %>
+            <div class="alert alert-info d-flex align-items-center gap-3 mb-0">
+              <i class="bi bi-arrow-repeat"></i>
+              <div>
+                <p class="mb-1 fw-semibold">Processamento em andamento</p>
+                <p class="mb-0 small">Existe(m) <%= deck.activeProcesses %> processo(s) de geração de cartas para este baralho. As novas cartas serão adicionadas automaticamente quando finalizar.</p>
+              </div>
+            </div>
+          <% } %>
+
           <section class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4 p-md-5">
               <div class="row g-4 align-items-start">

@@ -2,6 +2,7 @@ import { IntegrationController } from "../controllers/api/integration-controller
 import { AccountController } from "../controllers/api/account-controller.ts";
 import { ReviewController } from "../controllers/api/review-controller.ts";
 import { DecksController } from "../controllers/api/decks-controller.ts";
+import { deckGenerationQueue } from "../queue/deck-generation-queue.ts";
 import { AuthController } from "../controllers/api/auth-controller.ts";
 import { AppController } from "../controllers/app/app-controller.ts";
 import { DbConnection } from "../db/db-connection.ts";
@@ -76,6 +77,7 @@ new AppController(app);
 const bootstrap = async () => {
   try {
     await DbConnection.connect();
+    await deckGenerationQueue.init();
     app.listen(port, () => {
       console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
     });

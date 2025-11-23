@@ -82,3 +82,18 @@ CREATE TRIGGER update_timestamp
 BEFORE UPDATE ON user_integrations
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
+
+create table card_generation_processes (
+    id varchar(255) primary key,
+    user_id varchar(255) references users(id),
+    deck_id varchar(255) references decks(id),
+    status varchar(50) default 'processing',
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+);
+
+CREATE TRIGGER update_timestamp
+BEFORE UPDATE
+ON card_generation_processes
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();

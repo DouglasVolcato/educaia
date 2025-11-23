@@ -1,9 +1,9 @@
+import { userModel } from "../../db/models/user.model.ts";
 import { Application, Request, Response } from "express";
+import { BaseController } from "../base-controller.ts";
+import { InputField } from "../../db/repository.ts";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { userModel } from "../../db/models/user.model.ts";
-import { InputField } from "../../db/repository.ts";
-import { BaseController } from "../base-controller.ts";
 
 export class AccountController extends BaseController {
   constructor(app: Application) {

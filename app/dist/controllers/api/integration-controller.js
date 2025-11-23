@@ -1,6 +1,6 @@
-import { z } from "zod";
 import { integrationModel } from "../../db/models/integration.model.js";
 import { BaseController } from "../base-controller.js";
+import { z } from "zod";
 export class IntegrationController extends BaseController {
     constructor(app) {
         super(app);

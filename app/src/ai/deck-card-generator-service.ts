@@ -1,5 +1,5 @@
-import { LlmAgent, MessageSenderEnum } from "./agent.ts";
 import { FlashcardFormatterTool } from "./tools/flashcard-formatter.tool.ts";
+import { LlmAgent, MessageSenderEnum } from "./agent.ts";
 
 export type GeneratedFlashcard = {
   question: string;

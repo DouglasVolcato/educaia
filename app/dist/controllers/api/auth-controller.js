@@ -1,10 +1,10 @@
-import axios from "axios";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { UuidGeneratorAdapter } from "../../adapters/uuid-generator-adapter.js";
 import { usersModel } from "../../db/models/users-model.js";
 import { BaseController } from "../base-controller.js";
 import { authRateLimiter } from "../rate-limiters.js";
+import bcrypt from "bcryptjs";
+import axios from "axios";
+import { z } from "zod";
 export class AuthController extends BaseController {
     constructor(app) {
         super(app, { requiresAuth: false, rateLimiter: authRateLimiter });
