@@ -26,7 +26,7 @@
                     hx-post="/api/decks/<%= deck.id %>/generate"
                     hx-target="#generationPreview"
                     hx-swap="innerHTML"
-                    hx-on::after-request="if(event.detail.xhr.status === 201) { document.getElementById('generation-form').classList.add('d-none'); }"
+                    hx-on::after-request="if(event.detail.xhr.status >= 200 && event.detail.xhr.status < 300) { document.getElementById('generation-form').classList.add('d-none'); }"
                   >
                     <div>
                       <label class="form-label fw-semibold" for="contentSource">Conteúdo de referência</label>
