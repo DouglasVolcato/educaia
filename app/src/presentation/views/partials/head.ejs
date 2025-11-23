@@ -3,13 +3,42 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="EducaIA - Domine seus estudos com a EducaIA" />
+    <meta name="description" content="EducaIA - Domine seus estudos com a inteligência artificial e repetição espaçada" />
+
+    <link rel="canonical" href="https://educacaocomia.com/">
+
+    <meta property="og:title" content="EducaIA">
+    <meta property="og:description" content="Domine seus estudos com a inteligência artificial e repetição espaçada">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://educacaocomia.com/">
+    <meta property="og:image" content="https://educacaocomia.com/icons/favicon.svg?v=<%= locals.staticVersion || 1 %>">
+    <meta property="og:locale" content="pt_BR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="EducaIA - Domine seus estudos com a inteligência artificial e repetição espaçada">
+    <meta name="twitter:description" content="Domine seus estudos com a inteligência artificial e repetição espaçada">
+    <meta name="twitter:image" content="https://educacaocomia.com/icons/favicon.svg?v=<%= locals.staticVersion || 1 %>">
+
     <link rel="icon" type="image/x-icon" href="/icons/favicon.svg?v=<%= locals.staticVersion || 1 %>" />
     <title><%= title ? `${title} · ${locals.brand || 'EducaIA'}` : (locals.brand || 'EducaIA') %></title>
     <link rel="stylesheet" href="/css/bootstrap.min.css?v=<%= locals.staticVersion || 1 %>" />
     <link rel="stylesheet" href="/css/bootstrap-icons.min.css?v=<%= locals.staticVersion || 1 %>" />
     <script src="/js/htmx.min.js" defer></script>
     <link rel="stylesheet" href="/css/styles.css?v=<%= locals.staticVersion || 1 %>" />
+
+	<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "EducaIA",
+  "applicationCategory": "CommunicationApplication",
+  "url": "https://educacaocomia.com/",
+  "image": "https://educacaocomia.com/icons/favicon.svg?v=<%= locals.staticVersion || 1 %>",
+  "description": "Domine seus estudos com a inteligência artificial e repetição espaçada",
+  "operatingSystem": "Web-based"
+}
+</script>
+
     <script src="/js/htmx.min.js?v=<%= locals.staticVersion || 1 %>" defer></script>
     <script>
       (() => {
