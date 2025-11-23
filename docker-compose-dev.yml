@@ -48,7 +48,7 @@ services:
 
   prometheus_monitor:
     image: prom/prometheus:latest
-    container_name: prometheus
+    container_name: prometheus_monitor
     restart: always
     ports:
       - "9090:9090"
