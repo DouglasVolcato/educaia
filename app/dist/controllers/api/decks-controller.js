@@ -5,6 +5,7 @@ import { deckModel } from "../../db/models/deck.model.js";
 import { flashcardModel } from "../../db/models/flashcard.model.js";
 import { BaseController } from "../base-controller.js";
 import { deckGenerateRateLimiter } from "../rate-limiters.js";
+import { deckGenerationQueue } from "../../queue/deck-generation-queue.js";
 export class DecksController extends BaseController {
     constructor(app) {
         super(app);
@@ -399,40 +400,77 @@ export class DecksController extends BaseController {
                 const content = parsed.data.content;
                 const goal = parsed.data.goal?.length ? parsed.data.goal : undefined;
                 const tone = this.normalizeTone(parsed.data.tone);
-                const cards = await this.generateCardsWithFallback({
+                const jobId = await deckGenerationQueue.enqueue({
+                    deckId,
                     deckName: deck.name,
                     deckSubject: deck.subject ?? "Geral",
+                    userId: user.id,
                     content,
                     goal,
                     tone,
                 });
-                for (const suggestion of cards) {
-                    await flashcardModel.insert({
-                        fields: [
-                            { key: "id", value: UuidGeneratorAdapter.generate() },
-                            { key: "question", value: suggestion.question },
-                            { key: "answer", value: suggestion.answer },
-                            { key: "user_id", value: user.id },
-                            { key: "deck_id", value: deckId },
-                            { key: "status", value: "new" },
-                            { key: "review_count", value: 0 },
-                            { key: "last_review_date", value: null },
-                            { key: "difficulty", value: suggestion.difficulty ?? "medium" },
-                            { key: "tags", value: suggestion.tags ?? [] },
-                        ],
-                    });
-                }
                 res
-                    .status(201)
+                    .status(202)
                     .setHeader("Content-Type", "text/html; charset=utf-8")
-                    .send(this.buildCardPreviewMarkup(deck.id, cards));
+                    .send(this.buildQueuedGenerationMarkup(deck.id, jobId));
             }
             catch (error) {
-                console.error("Failed to generate AI suggestion", error);
+                console.error("Failed to enqueue AI suggestion", error);
                 res
                     .status(500)
                     .setHeader("Content-Type", "text/html; charset=utf-8")
-                    .send('<div class="alert alert-danger" role="alert">Não foi possível gerar sugestões no momento. Tente novamente mais tarde.</div>');
+                    .send('<div class="alert alert-danger" role="alert">Não foi possível enviar para processamento. Tente novamente mais tarde.</div>');
+            }
+        };
+        this.handleGenerationStatus = async (req, res) => {
+            const user = this.ensureAuthenticatedUser(req, res);
+            if (!user) {
+                return;
+            }
+            const { deckId, jobId } = req.params;
+            try {
+                const deck = await this.ensureDeckBelongsToUser(deckId, user.id);
+                if (!deck) {
+                    res
+                        .status(404)
+                        .setHeader("Content-Type", "text/html; charset=utf-8")
+                        .send('<div class="alert alert-danger" role="alert">Baralho não encontrado.</div>');
+                    return;
+                }
+                const status = deckGenerationQueue.getStatus(jobId);
+                if (!status) {
+                    res
+                        .status(404)
+                        .setHeader("Content-Type", "text/html; charset=utf-8")
+                        .send('<div class="alert alert-warning" role="alert">Não foi possível localizar o processamento solicitado.</div>');
+                    return;
+                }
+                if (status.state === "completed") {
+                    res
+                        .status(200)
+                        .setHeader("Content-Type", "text/html; charset=utf-8")
+                        .send(this.buildQueueStatusMarkup(deck.id, jobId, status) +
+                        this.buildCardPreviewMarkup(deck.id, status.cards));
+                    return;
+                }
+                if (status.state === "failed") {
+                    res
+                        .status(500)
+                        .setHeader("Content-Type", "text/html; charset=utf-8")
+                        .send(this.buildQueueStatusMarkup(deck.id, jobId, status));
+                    return;
+                }
+                res
+                    .status(200)
+                    .setHeader("Content-Type", "text/html; charset=utf-8")
+                    .send(this.buildQueueStatusMarkup(deck.id, jobId, status));
+            }
+            catch (error) {
+                console.error("Failed to check generation status", error);
+                res
+                    .status(500)
+                    .setHeader("Content-Type", "text/html; charset=utf-8")
+                    .send('<div class="alert alert-danger" role="alert">Não foi possível verificar o status. Tente novamente.</div>');
             }
         };
         this.cardGenerator = new DeckCardGeneratorService();
@@ -445,6 +483,7 @@ export class DecksController extends BaseController {
         this.router.put("/decks/:deckId/cards/:cardId", this.handleUpdateCard);
         this.router.delete("/decks/:deckId/cards/:cardId", this.handleDeleteCard);
         this.router.post("/decks/:deckId/cards/:cardId/move-to-review", this.handleMoveCardToReview);
+        this.router.get("/decks/:deckId/generate/status/:jobId", this.handleGenerationStatus);
         this.router.post("/decks/:deckId/generate", deckGenerateRateLimiter, this.handleGenerateCards);
     }
     createDeckBaseSchema() {
@@ -471,14 +510,41 @@ export class DecksController extends BaseController {
             ],
         });
     }
-    async generateCardsWithFallback(input) {
-        const result = await this.cardGenerator.generateCards(input);
-        if (result.cards.length > 0) {
-            return result.cards;
-        }
-        else {
-            throw new Error("Erro ao gerar flashcards.");
-        }
+    buildQueuedGenerationMarkup(deckId, jobId) {
+        const status = {
+            state: "queued",
+            message: "Sua solicitação entrou na fila RabbitMQ e será processada em instantes...",
+        };
+        return this.buildQueueStatusMarkup(deckId, jobId, status);
+    }
+    buildQueueStatusMarkup(deckId, jobId, status) {
+        const isWaiting = status.state === "queued" || status.state === "processing";
+        const baseIcon = {
+            queued: "bi-hourglass-split text-warning",
+            processing: "bi-arrow-repeat text-primary",
+            completed: "bi-check-circle-fill text-success",
+            failed: "bi-exclamation-triangle-fill text-danger",
+        };
+        const icon = baseIcon[status.state];
+        const pollAttributes = isWaiting
+            ? `hx-get="/api/decks/${deckId}/generate/status/${jobId}" hx-trigger="load, every 2s" hx-target="#generationPreview" hx-swap="innerHTML"`
+            : "";
+        const secondaryText = isWaiting
+            ? "Aguardando processamento da fila. Esta área será atualizada automaticamente."
+            : status.state === "failed"
+                ? "Houve um problema ao processar sua solicitação. Tente novamente em instantes."
+                : "Confira abaixo o resultado do processamento.";
+        return `
+      <div class="card border-0 shadow-sm" ${pollAttributes}>
+        <div class="card-body p-4 d-flex align-items-center gap-3">
+          <i class="bi ${icon} fs-3"></i>
+          <div>
+            <p class="mb-1 fw-semibold">${status.message}</p>
+            <p class="mb-0 text-secondary small">${secondaryText}</p>
+          </div>
+        </div>
+      </div>
+    `;
     }
     normalizeTone(value) {
         if (value === "concise" || value === "deep") {

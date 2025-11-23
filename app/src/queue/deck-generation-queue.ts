@@ -1,4 +1,4 @@
-import amqplib, { Channel, Connection, ConsumeMessage } from "amqplib";
+import amqplib, { Channel, ChannelModel, ConsumeMessage } from "amqplib";
 import { DeckCardGeneratorService } from "../ai/deck-card-generator.service.ts";
 import { UuidGeneratorAdapter } from "../adapters/uuid-generator-adapter.ts";
 import { flashcardModel } from "../db/models/flashcard.model.ts";
@@ -25,7 +25,7 @@ export type DeckGenerationStatus =
 class DeckGenerationQueue {
   private readonly queueName = "deck-generation";
   private readonly connectionString = process.env.RABBITMQ_URL ?? "amqp://rabbitmq:5672";
-  private connection?: Connection;
+  private connection?: ChannelModel;
   private channel?: Channel;
   private isConsuming = false;
   private readonly statuses = new Map<string, DeckGenerationStatus>();

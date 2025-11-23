@@ -5,6 +5,7 @@ import { DecksController } from "../controllers/api/decks-controller.js";
 import { AuthController } from "../controllers/api/auth-controller.js";
 import { AppController } from "../controllers/app/app-controller.js";
 import { DbConnection } from "../db/db-connection.js";
+import { deckGenerationQueue } from "../queue/deck-generation-queue.js";
 import { fileURLToPath } from "url";
 import "module-alias/register.js";
 import { inspect } from "util";
@@ -60,6 +61,7 @@ new AppController(app);
 const bootstrap = async () => {
     try {
         await DbConnection.connect();
+        await deckGenerationQueue.init();
         app.listen(port, () => {
             console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
         });
