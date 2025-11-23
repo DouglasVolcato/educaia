@@ -1,6 +1,11 @@
     <footer class="bg-body-tertiary border-top mt-auto py-3">
       <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <span class="text-secondary small"><%= locals.brand || 'EducaIA' %></span>
+        <div class="d-flex gap-5 small">
+          <span class="text-secondary small"><%= locals.brand || 'EducaIA' %></span>
+          <span class="text-secondary small">
+            Feito por <a target="_blank" class="link-secondary text-decoration-none" href="https://volcatosistemas.com/">Volcato Sistemas</a>
+          </span>
+        </div>
         <div class="d-flex gap-3 small">
           <a class="link-secondary text-decoration-none" href="/terms">Termos</a>
           <a class="link-secondary text-decoration-none" href="/privacy">Privacidade</a>
@@ -8,3 +13,4 @@
         </div>
       </div>
     </footer>
+
