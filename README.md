@@ -5,7 +5,6 @@ EducaIA é um aplicativo web que ajuda nos estudos a partir de flashcards gerado
 ## Telas principais
 Algumas telas para visualizar o fluxo do app:
 - ![Login](docs/screens/login.png)
-- ![Criar conta](docs/screens/create-account.png)
 - ![Lista de baralhos](docs/screens/decks.png)
 - ![Criar baralho](docs/screens/deck-creation.png)
 - ![Visualizar baralho](docs/screens/deck-view.png)
