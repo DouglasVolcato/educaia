@@ -63,7 +63,7 @@ const bootstrap = async () => {
         await DbConnection.connect();
         await deckGenerationQueue.init();
         app.listen(port, () => {
-            console.log(`Server running on ${process.env.API_URL || "http://localhost:3000"}`);
+            console.log(`Server running on ${process.env.API_URL || "http://localhost:3003"}`);
         });
     }
     catch (error) {

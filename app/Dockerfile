@@ -4,6 +4,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-EXPOSE 3000
+EXPOSE 3003
 
 CMD ["npm", "run", "start"]
